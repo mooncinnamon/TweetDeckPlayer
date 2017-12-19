@@ -222,13 +222,6 @@ ipcRenderer.on('apply-config', event => {
     document.body.querySelector('.js-app.application').style = `--mention-color: ${Config.data.twColorMention};--hashtag-color: ${Config.data.twColorHashtag};--url-color: ${Config.data.twColorURL}`;
 
     const cl = document.body.classList;
-    if (config.useStarForFavorite) {
-      cl.remove('hearty');
-      cl.add('starry');
-    } else {
-      cl.remove('starry');
-      cl.add('hearty');
-    }
     cl.toggle('tdp-square-profile', config.useSquareProfileImage);
     if (config.applyCustomizeSlider && !cl.contains('customize-columns')) {
       cl.add('customize-columns');
@@ -801,11 +794,6 @@ document.addEventListener('DOMContentLoaded', () => {
       TD.settings.setUseStream(TD.settings.getUseStream());
       patchContentEditable();
     }, 3000);
-    if (config.useStarForFavorite) {
-      const cl = document.body.classList;
-      cl.remove('hearty');
-      cl.add('starry');
-    }
 
     // Enable emojipad
     var emojiPadCSS = document.createElement('link');

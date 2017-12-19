@@ -87,12 +87,6 @@ module.exports = [
   },
   {
     _type: 'entry',
-    name: 'useStarForFavorite',
-    valueType: 'bool',
-    label: 'Show Stars on Favorited Tweets (instead of hearts)',
-  },
-  {
-    _type: 'entry',
     name: 'openURLInInternalBrowser',
     valueType: 'bool',
     label: 'Open External URL with Internal Browser',
