@@ -174,6 +174,13 @@ module.exports = [
     valueType: 'bool',
     label: 'Rename Saved Image File as URL',
   },
+  {
+    _type: 'entry',
+    name: 'disableParallelDownload',
+    valueType: 'bool',
+    label: 'Disable Parallel Download',
+    description: 'Check this if saved image got corrupted. May be slower download',
+  },
   { _type: 'subsection', label: 'Path to Save' },
   {
     _type: 'entry',

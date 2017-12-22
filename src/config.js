@@ -23,6 +23,7 @@ module.exports = {
     autoReloadCycle: 12,
     enableUserNotes: false,
     detectUpdate: true,
+    disableParallelDownload: false,
   },
   data: {},
   load () {

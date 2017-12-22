@@ -1,13 +1,14 @@
 const fs = require('fs');
 const request = require('request');
 const path = require('path');
+const Async = require('async');
 const Config = require('../config');
 const Util = require('../util');
 const {remote} = require('electron');
 
 const config = Config.load();
 
-function download (url, filename) {
+function download (url, filename, callback = null) {
   console.info(`download start: ${url}`);
   if (config.autoSaveFavUrlName) {
     filename = Util.getFileName(url);
@@ -24,7 +25,21 @@ function download (url, filename) {
   }
   const filepath = path.join(savepath, filename);
   try {
-    request(url).pipe(fs.createWriteStream(filepath));
+    const req = request(url);
+    if (typeof callback === 'function') {
+      req.on('error', err => {
+        callback(err, {
+          ok: false,
+        });
+      });
+      req.on('end', () => {
+        callback(null, {
+          ok: true,
+          filepath,
+        });
+      });
+    }
+    req.pipe(fs.createWriteStream(filepath));
   } catch (e) {
     window.toastErrorMessage(`Failed - Save Image : Cannot save image to ${filepath}`);
   }
@@ -37,7 +52,7 @@ function generateFilename (imgurl, index) {
   const now = new Date();
   let [date, time, zone] = now.toISOString().split(/T|Z/);
   time = time.replace(/:/g, '');
-  const result = `${date} ${time}.${ext}`;
+  const result = `${date} ${time}-${index}.${ext}`;
   return result;
 }
 
@@ -47,31 +62,45 @@ function favoriteAutoSave (tweet) {
 
   // in detail view
   const images = tweet.find('img.media-img');
+  const filesToDownload = [];
+  let index = 1;
   if (images.length > 0) {
-    let index = 1;
     images.each((i, elem) => {
-      let imageURL = Util.getOrigPath(elem.src);
-      let filename = generateFilename(imageURL, index++);
-      download(imageURL, filename);
+      let url = Util.getOrigPath(elem.src);
+      let filename = generateFilename(url, index++);
+      filesToDownload.push({url, filename});
     });
   } else {
     // in timeline
     const images = tweet.find('a.js-media-image-link');
-    let index = 1;
     images.each((i, elem) => {
       let match = elem.style.backgroundImage.match(/url\("(.+)"\)/);
       if (!match) return;
-      let imageURL = Util.getOrigPath(match[1]);
-      let filename = generateFilename(imageURL, index++);
-      download(imageURL, filename);
+      let url = Util.getOrigPath(match[1]);
+      let filename = generateFilename(url, index++);
+      filesToDownload.push({url, filename});
     });
   }
   // find GIF
   const video = tweet.find('video.js-media-gif');
   if (video.length > 0) {
-    const src = video[0].currentSrc;
-    const filename = generateFilename(src);
-    download(src, filename);
+    const url = video[0].currentSrc;
+    const filename = generateFilename(url);
+    filesToDownload.push({url, filename});
+  }
+  if (config.disableParallelDownload) {
+    Async.eachSeries(filesToDownload, (file, callback) => {
+      download(file.url, file.filename, (err, result) => {
+        callback(err, result);
+      });
+    }, error => {
+      if (!error) return;
+      window.toastErrorMessage(`Failed - ${error}`);
+    });
+  } else {
+    filesToDownload.forEach(file => {
+      download(file.url, file.filename);
+    });
   }
 }
 
