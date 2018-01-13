@@ -87,13 +87,6 @@ module.exports = [
   },
   {
     _type: 'entry',
-    name: 'openURLInInternalBrowser',
-    valueType: 'bool',
-    label: 'Open External URL with Internal Browser',
-    description: "If turned on, External links will be opened with TweetDeck Player's browser window.<br>The default web browser will be used otherwise.",
-  },
-  {
-    _type: 'entry',
     name: 'enableFastRetweet',
     valueType: 'bool',
     label: 'Enable Fast Retweet',

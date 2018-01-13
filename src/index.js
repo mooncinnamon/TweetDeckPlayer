@@ -709,12 +709,7 @@ app.on('ready', () => {
 
   win.webContents.on('new-window', (e, url, target) => {
     e.preventDefault();
-    if (Config.data.openURLInInternalBrowser && !global.keyState.shift ||
-        target === 'popup') {
-      openPopup(url);
-    } else {
-      shell.openExternal(url);
-    }
+    shell.openExternal(url);
   });
 
   // MacOS Application menu
