@@ -22,7 +22,7 @@ const createUUIDv4 = () => {
   });
 }
 
-let win, popup, settingsWin, twtlibWin, accessibilityWin, gTranslatorWin;
+let win, settingsWin, twtlibWin, accessibilityWin, gTranslatorWin;
 ipcMain.on('load-config', (event, arg) => {
   event.returnValue = Config.load();
 });
@@ -146,40 +146,6 @@ const openSetting = (window) => {
   settingsWin.loadURL('file:///' + path.join(__dirname, 'setting.html'));
 };
 
-const openPopup = url => {
-  const preference = (Config.data && Config.data.popup_bounds) ? Config.data.popup_bounds : {};
-  preference.icon = path.join(__dirname, 'tweetdeck.ico');
-  preference.modal = false;
-  preference.show = true;
-  preference.autoHideMenuBar = true;
-  preference.webPreferences = {
-    nodeIntegration: false,
-    webSecurity: true,
-    preload: path.join(__dirname, 'preload_popup.js'),
-  };
-  popup = new BrowserWindow(preference);
-  popup.on('close', e => {
-    Config.load();
-    if (popup) {
-      e.sender.hide();
-      if (e.sender.isMaximized()) {
-        e.sender.unmaximize();
-      }
-      if (e.sender.isFullScreen()){
-        e.sender.setFullScreen(false);
-      }
-      Config.data.popup_bounds = popup.getBounds();
-    }
-    Config.save();
-    popup = null;
-  });
-  popup.webContents.on('new-window', (e, url) => {
-    e.preventDefault();
-    shell.openExternal(url);
-  });
-  popup.loadURL(url);
-  popup.setAlwaysOnTop(win.isAlwaysOnTop());
-};
 
 function openGoogleTranslatorWindow (text) {
   if (!gTranslatorWin) {
@@ -256,7 +222,6 @@ const sub_alwaystop = window => ({
   click () {
     const flag = !window.isAlwaysOnTop();
     window.setAlwaysOnTop(flag);
-    if (popup) popup.setAlwaysOnTop(flag);
   },
 });
 
@@ -558,7 +523,6 @@ app.on('ready', () => {
           click () {
             var flag = !win.isAlwaysOnTop();
             win.setAlwaysOnTop(flag);
-            if (popup) popup.setAlwaysOnTop(flag);
           },
         },
         {
@@ -674,17 +638,6 @@ app.on('ready', () => {
       }
 
       Config.data.bounds = win.getBounds();
-      if (popup) {
-        Config.data.popup_bounds = popup.getBounds();
-
-        popup.sender.hide();
-        if (popup.sender.isMaximized()) {
-          popup.sender.unmaximize();
-        }
-        if (popup.sender.isFullScreen()){
-          popup.sender.setFullScreen(false);
-        }
-      }
       Config.save();
       win = null;
     } catch (e) { };
@@ -813,7 +766,6 @@ app.on('ready', () => {
             if (win) {
               var flag = !win.isAlwaysOnTop();
               win.setAlwaysOnTop(flag);
-              if (popup) popup.setAlwaysOnTop(flag);
             }
           },
         },
@@ -939,14 +891,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       if (isRange) {
         template.push(sub_copy(event.sender));
         template.push(separator);
-      } else if (isPopup) {
-        template.push(sub_back_page(event.sender));
-        template.push(sub_forward_page(event.sender));
-        template.push(sub_reload(event.sender));
       }
-      if (!isPopup) {
-        template.push(sub_reload(event.sender));
-      }
+      template.push(sub_reload(event.sender));
       break;
 
     case 'text':
@@ -1065,15 +1011,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       break;
   }
 
-  if (isPopup) {
-    template.push(separator);
-    template.push(sub_copy_page_url(event.sender));
-    template.push(sub_open_page_external(event.sender));
-  }
-
   const contextMenu = Menu.buildFromTemplate(template);
-  if (!isPopup) contextMenu.popup(win);
-  else if (popup) contextMenu.popup(popup);
+  contextMenu.popup(win);
   return;
 });
 
