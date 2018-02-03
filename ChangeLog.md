@@ -1,7 +1,13 @@
 # 트윗덱 플레이어 ChangeLog
 http://github.com/sokcuri/TweetDeckPlayer/releases
 
-트윗덱 플레이어 v2.34.G1
+트윗덱 플레이어 v2.34-G2
+-----------------------------
+* 트윗덱 디자인변경 이후 리트윗기능이 작동하지 않는 버그를 고쳤습니다.
+* Electron을 보안취약점(CVE-2018-1000006)을 수정한 v1.7.11로 업그레이드했습니다. ( 자세한 정보: https://electronjs.org/blog/protocol-handler-fix )
+* 사용자노트가 좁게 보이는 현상을 고쳤습니다.
+
+트윗덱 플레이어 v2.34-G1
 -----------------------------
 * Electron 버전을 1.7로 다운그레이드했습니다.
   - Electron 1.8b에서 마음글 자동저장기능이 오작동하는 버그가 있었습니다.
