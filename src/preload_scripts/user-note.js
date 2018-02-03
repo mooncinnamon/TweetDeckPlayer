@@ -97,7 +97,8 @@ const USER_NOTE_CSS = `
     color: #292f33;
   }
   .user-note-area {
-    height: 80px;
+    min-height: 80px;
+    max-height: 100px;
   }
   .user-note-control {
     margin: 3px;
