@@ -709,82 +709,35 @@ document.addEventListener('DOMContentLoaded', () => {
   window.AutoSaveFav = AutoSaveFav;
   processFavorite = 'AutoSaveFav(e);' + processFavorite;
   TD.services.TwitterClient.prototype.favorite = Function('e,t,i', processFavorite);
-
   // Fast Retweet
-  TD.services.TwitterStatus.prototype.retweet_direct = function (e) {
+  TD.services.TwitterStatus.prototype.retweet$REAL = TD.services.TwitterStatus.prototype.retweet;
+  TD.services.TwitterStatus.prototype.retweet = function () {
     if (config.enableFastRetweet && !keyState.shift) {
-      var t, i, s, n;
-      var r = this.isRetweeted;
-      var o = TD.controller.clients.getClient(this.account.getKey());
-      this.setRetweeted(!this.isRetweeted);
-      this.animateRetweet(e.element);
-      var n = function (e) {
-      };
-      var s = function (e) {
-        var t = TD.core.defer.fail();
-        if (403 === e.status || 404 === e.status) {
-          window.toastErrorMessage((r ? TD.i('Failed: Unretweet -') : TD.i('Failed: Retweet -')) + ' ' + JSON.parse(e.responseText).errors[0].message);
-        }
-        403 !== e.status && 404 !== e.status || (t = this.refreshRetweet(o)),
-        t.addErrback(function () {
-          this.setRetweeted(r),
-          n(e);
-        }
-        .bind(this));
+      const currentAccount = TD.storage.accountController.getDefault();
+      const retweeterNickName = currentAccount.state.name;
+      const retweeterUserName = currentAccount.state.username;
+      const retweeter = `${retweeterNickName}(@${retweeterUserName})`;
+      const currentAccountKey = currentAccount.privateState.key;
+      if (this.isRetweeted) {
+        $(document).trigger('uiUndoRetweet', {
+          tweetId: this.getMainTweet().id,
+          from: [ currentAccountKey ],
+        });
+        this.setRetweeted(false);
+        window.toastMessage(`${retweeter}로 리트윗을 취소했습니다.`);
+      } else {
+        $(document).trigger('uiRetweet', {
+          id: this.id,
+          from: [ currentAccountKey ],
+        });
+        this.setRetweeted(true);
+        window.toastMessage(`${retweeter}로 리트윗했습니다.`);
       }
-      .bind(this);
-      var i = function (e) {
-        e.error && s();
-      };
-      r ? (o.unretweet(this.id, i, s),
-      t = () => {}) : (o.retweet(this.id, i, s),
-      t = TD.controller.stats.retweet),
-      t(this.getScribeItemData(), this.account.getUserID());
+      return;
     } else {
-      var e = 1 === TD.storage.accountController.getAccountsForService('twitter').length;
-      this.isRetweeted && e ? (this.setRetweeted(!1),
-      $(document).trigger('uiUndoRetweet', {
-        tweetId: this.getMainTweet().id,
-        from: this.account.getKey(),
-      })) : new TD.components.ActionDialog(this);
+      return TD.services.TwitterStatus.prototype.retweet$REAL.call(this);
     }
   };
-  TD.services.TwitterStatus.prototype.refreshRetweet = function (e) {
-    var t = new TD.core.defer.Deferred;
-    return e.show(this.id, t.callback.bind(t), t.errback.bind(t)),
-    t.addCallback(function (e) {
-      this.setRetweeted(e.isRetweeted);
-    }
-    .bind(this)),
-    t;
-  };
-  TD.services.TwitterStatus.prototype.animateRetweet = function (e) {
-    var t = 'anim anim-slower anim-bounce-in';
-    window.requestAnimationFrame(function () {
-      e.find('a[rel="retweet"]').toggleClass(t, this.isRetweeted);
-    }
-    .bind(this));
-  };
-  TD.services.TwitterClient.prototype.retweet = function (e, t, i) {
-    var s = this;
-    var n = function (e) {
-      t(e);
-    };
-    this.makeTwitterCall(this.API_BASE_URL + 'statuses/retweet/' + e + '.json', {
-      id: e,
-    }, 'POST', this.processTweet, n, i);
-  };
-  TD.services.TwitterClient.prototype.unretweet = function (e, t, i) {
-    var s = this;
-    var n = function (e) {
-      t(e);
-    };
-    this.makeTwitterCall(this.API_BASE_URL + 'statuses/unretweet/' + e + '.json', {
-      id: e,
-    }, 'POST', this.processTweet, n, i);
-  };
-  TD.services.TwitterStatus.prototype.retweet_old = TD.services.TwitterStatus.prototype.retweet;
-  TD.services.TwitterStatus.prototype.retweet = TD.services.TwitterStatus.prototype.retweet_direct;
   // TweetDeck Ready Check
   $(document).on('TD.ready', () => {
     ipcRenderer.send('page-ready-tdp', this);
