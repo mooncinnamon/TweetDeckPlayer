@@ -713,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
   TD.services.TwitterStatus.prototype.retweet$REAL = TD.services.TwitterStatus.prototype.retweet;
   TD.services.TwitterStatus.prototype.retweet = function () {
     if (config.enableFastRetweet && !keyState.shift) {
-      const currentAccount = TD.storage.accountController.getDefault();
+      const currentAccount = this.account;
       const retweeterNickName = currentAccount.state.name;
       const retweeterUserName = currentAccount.state.username;
       const retweeter = `${retweeterNickName}(@${retweeterUserName})`;
