@@ -84,8 +84,12 @@ ipcMain.on('cloud-remove-config', (event, title) => {
 
 ipcMain.on('request-theme', event => {
   try {
-    const script = '(()=>{var x=document.querySelector("meta[http-equiv=Default-Style]");return x&&x.content||"light";})()';
-    win.webContents.executeJavaScript(script, false, (theme) => event.returnValue = theme);
+    const script = `(() => {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    })()`;
+    win.webContents.executeJavaScript(script, false, theme => {
+      event.returnValue = theme;
+    });
   } catch (e) { }
 });
 
