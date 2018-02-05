@@ -74,7 +74,9 @@ ipcMain.on('cloud-remove-config', (event, title) => {
     });
     const r = win.webContents.send('cloud-remove-config', uuid, title);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
