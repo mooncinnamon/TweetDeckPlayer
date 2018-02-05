@@ -14,7 +14,8 @@
 }
 
 .tdp-square-profile .prf-img,
-.tdp-square-profile img.avatar {
+.tdp-square-profile img.avatar,
+html.dark .tdp-square-profile img.avatar {
   border-radius: 10%;
 }
 
