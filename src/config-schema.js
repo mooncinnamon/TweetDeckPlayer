@@ -94,6 +94,12 @@ module.exports = [
   },
   {
     _type: 'entry',
+    name: 'notifyFastRetweet',
+    valueType: 'bool',
+    label: 'Show Notification after Fast Retweet',
+  },
+  {
+    _type: 'entry',
     name: 'enterKeyTweet',
     valueType: 'bool',
     label: 'Press Enter Key to Tweet',

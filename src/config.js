@@ -24,6 +24,7 @@ module.exports = {
     enableUserNotes: false,
     detectUpdate: true,
     disableParallelDownload: false,
+    notifyFastRetweet: true,
   },
   data: {},
   load () {

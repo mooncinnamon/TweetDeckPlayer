@@ -724,14 +724,18 @@ document.addEventListener('DOMContentLoaded', () => {
           from: [ currentAccountKey ],
         });
         this.setRetweeted(false);
-        window.toastMessage(`${retweeter}로 리트윗을 취소했습니다.`);
+        if (config.notifyFastRetweet) {
+          window.toastMessage(`${retweeter}로 리트윗을 취소했습니다.`);
+        }
       } else {
         $(document).trigger('uiRetweet', {
           id: this.id,
           from: [ currentAccountKey ],
         });
         this.setRetweeted(true);
-        window.toastMessage(`${retweeter}로 리트윗했습니다.`);
+        if (config.notifyFastRetweet) {
+          window.toastMessage(`${retweeter}로 리트윗했습니다.`);
+        }
       }
       return;
     } else {
