@@ -3,9 +3,11 @@ const {app, BrowserWindow, dialog, session, Menu, MenuItem, ipcMain, shell} = el
 const fs = require('fs');
 const mzFS = require('mz/fs');
 const path = require('path');
+const mime = require('mime');
 const mkdirp = require('mkdirp');
 const request = require('request');
 const child_process = require('child_process');
+const URL = require('url');
 const Util = require('./util');
 const VERSION = require('./version');
 
@@ -331,52 +333,64 @@ const sub_open_link_popup = webContents => ({
 const sub_save_link = (webContents, Addr) => ({
   label: 'Save link as..',
   click () {
-    // 될 수 있으면 원본 화질의 이미지를 가져온다
-    const path = Util.getOrigPath(Addr.link);
-    const filename = Util.getFileName(path);
-    const ext = Util.getFileExtension(path);
+    let url = Addr.link;
     const filters = [];
-
-    // 리퀘스트를 때려서 해당 링크의 MIME TYPE을 얻어온다
     const reqOption = {
+      url,
       method: 'HEAD',
-      followAllRedirects: true, // 리다이렉트 따라가기 켬
-      url: path,
+      followAllRedirects: true,
     };
     request(reqOption, (error, response, body) => {
-        // 에러가 발생하면 동작하지 않음
       if (error) return;
-        // 컨텍스트 타입이 text/html인 경우 htm을 붙이고 필터에 추가
-      if (response.headers['content-type'] &&
-          response.headers['content-type'].toLowerCase().search('text/html') !== -1) {
-        filename += '.htm';
-        filters.push({
-          name: 'HTML Document',
-          extensions: ['htm'],
-        });
+      const realUrl = response.request.uri.href;
+      let filename = Util.getFileName(realUrl);
+      let contentType = response.headers['content-type'];
+      const parsedUrl = URL.parse(realUrl);
+      if (parsedUrl.hostname === 'i.imgur.com' && realUrl.endsWith('.gifv')) {
+        // force download gif (instead of gifv (mp4 video))
+        url = realUrl.replace(/\.gifv$/i, '.gif');
+        filename = filename.replace(/\.gifv$/i, '.gif');
+        contentType = 'image/gif';
       }
-      filters.push({
-        name: 'All Files',
-        extensions: ['*'],
-      });
-
-        // 모든 포인터 이벤트를 잠시 없앤다
+      if (typeof contentType === 'string') {
+        contentType = contentType.toLowerCase();
+        let extension = mime.getExtension(contentType);
+        if (extension) {
+          if (extension === 'jpeg') {
+            extension = 'jpg';
+          }
+          if (!filename.endsWith(`.${extension}`)) {
+            filename += `.${extension}`;
+          }
+          filters.push({
+            name: `${extension} File`,
+            extensions: [extension],
+          });
+        } else {
+          filters.push({
+            name: 'File',
+            extensions: ['*'],
+          });
+        }
+      }
+      // 모든 포인터 이벤트를 잠시 없앤다
       webContents.send('no-pointer', true);
 
-        // 저장 다이얼로그를 띄운다
       const savepath = dialog.showSaveDialog({
         defaultPath: filename,
         filters,
       });
 
-        // 포인터 이벤트를 되살린다
+      // 포인터 이벤트를 되살린다
       webContents.send('no-pointer', false);
 
       if (typeof savepath === 'undefined') return;
 
-        // http 요청해서 링크를 저장
-      const req_url = response.request.uri.href;
-      request(req_url).pipe(fs.createWriteStream(savepath));
+      // http 요청해서 링크를 저장
+      request({
+        url,
+        followAllRedirects: true,
+      }).pipe(fs.createWriteStream(savepath));
     });
   },
 });
