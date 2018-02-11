@@ -1,5 +1,5 @@
 const electron = require('electron');
-const {app, BrowserWindow, dialog, session, Menu, MenuItem, ipcMain, shell} = electron;
+const {app, BrowserWindow, dialog, session, Menu, ipcMain, shell} = electron;
 const fs = require('fs');
 const mzFS = require('mz/fs');
 const path = require('path');
@@ -9,7 +9,6 @@ const request = require('request');
 const child_process = require('child_process');
 const URL = require('url');
 const Util = require('./util');
-const VERSION = require('./version');
 
 // set to userdata folder
 app.setPath('userData', Util.getUserDataPath());
@@ -18,14 +17,14 @@ app.setPath('userData', Util.getUserDataPath());
 const Config = require('./config');
 
 const createUUIDv4 = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
-}
+};
 
-let win, settingsWin, twtlibWin, accessibilityWin, gTranslatorWin;
-ipcMain.on('load-config', (event, arg) => {
+let win, settingsWin, twtlibWin, gTranslatorWin;
+ipcMain.on('load-config', event => {
   event.returnValue = Config.load();
 });
 
@@ -34,21 +33,25 @@ ipcMain.on('save-config', (event, config) => {
   Config.save();
 });
 
-ipcMain.on('apply-config', (event, config) => {
+ipcMain.on('apply-config', () => {
   try {
     win.webContents.send('apply-config');
-  } catch (e) { }
+  } catch (e) {
+    console.error(e);
+  }
 });
 
-ipcMain.on('cloud-load-config', (event, title) => {
+ipcMain.on('cloud-load-config', event => {
   let uuid = createUUIDv4();
   try {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-load-config', uuid);
+    win.webContents.send('cloud-load-config', uuid);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
@@ -60,9 +63,11 @@ ipcMain.on('cloud-save-config', (event, title) => {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-save-config', uuid, title);
+    win.webContents.send('cloud-save-config', uuid, title);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
@@ -74,7 +79,7 @@ ipcMain.on('cloud-remove-config', (event, title) => {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-remove-config', uuid, title);
+    win.webContents.send('cloud-remove-config', uuid, title);
     return;
   } catch (e) {
     console.error(e);
@@ -92,10 +97,12 @@ ipcMain.on('request-theme', event => {
     win.webContents.executeJavaScript(script, false, theme => {
       event.returnValue = theme;
     });
-  } catch (e) { }
+  } catch (e) {
+    event.returnValue = 'light';
+  }
 });
 
-ipcMain.on('open-settings', event => {
+ipcMain.on('open-settings', () => {
   openSetting(win);
 });
 
@@ -110,7 +117,7 @@ global.keyState.alt = false;
 Config.load();
 
 // 프로그램의 중복실행 방지
-var existInst = app.makeSingleInstance((commandLine, workingDirectory) => {
+var existInst = app.makeSingleInstance(() => {
   // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
   if (win) {
     win.show();
@@ -127,7 +134,7 @@ if (existInst) {
 app.on('gpu-process-crashed', () => {});
 
 // setting window
-const openSetting = (window) => {
+const openSetting = () => {
   if (settingsWin) {
     settingsWin.focus();
     return;
@@ -167,7 +174,7 @@ function openGoogleTranslatorWindow (text) {
         webSecurity: true,
       },
     });
-    gTranslatorWin.on('close', e => {
+    gTranslatorWin.on('close', () => {
       gTranslatorWin = null;
     });
   }
@@ -204,16 +211,6 @@ const sub_selectall = webContents => ({
 // page control
 //
 
-const sub_back_page = webContents => ({
-  label: 'Back',
-  click: () => webContents.send('command', 'back'),
-  enabled: webContents.canGoBack(),
-});
-const sub_forward_page = webContents => ({
-  label: 'Forward',
-  click: () => webContents.send('command', 'forward'),
-  enabled: webContents.canGoForward(),
-});
 const sub_reload = webContents => ({
   label: 'Reload',
   click: () => webContents.send('command', 'reload'),
@@ -233,7 +230,7 @@ const sub_alwaystop = window => ({
   },
 });
 
-const sub_setting = window => ({
+const sub_setting = () => ({
   label: 'Setting',
   click: () => openSetting(),
 });
@@ -340,7 +337,7 @@ const sub_save_link = (webContents, Addr) => ({
       method: 'HEAD',
       followAllRedirects: true,
     };
-    request(reqOption, (error, response, body) => {
+    request(reqOption, (error, response) => {
       if (error) return;
       const realUrl = response.request.uri.href;
       let filename = Util.getFileName(realUrl);
@@ -398,16 +395,6 @@ const sub_save_link = (webContents, Addr) => ({
 const sub_copy_link = webContents => ({
   label: 'Copy link URL',
   click: () => webContents.send('command', 'copylink'),
-});
-
-// popup
-const sub_copy_page_url = webContents => ({
-  label: 'Copy Page URL',
-  click: () => webContents.send('command', 'copypageurl'),
-});
-const sub_open_page_external = webContents => ({
-  label: 'Open Page in Browser',
-  click: () => webContents.send('command', 'openpageexternal'),
 });
 
 // quote
@@ -600,7 +587,7 @@ app.on('ready', () => {
     }
   });
 
-  ipcMain.on('page-ready-tdp', (event, arg) => {
+  ipcMain.on('page-ready-tdp', () => {
     // destroyed contents when loading
     const emojipadCSS = fs.readFileSync(path.join(__dirname, 'css/emojipad.css'), 'utf8');
     win.webContents.insertCSS(emojipadCSS);
@@ -660,10 +647,12 @@ app.on('ready', () => {
       Config.data.bounds = win.getBounds();
       Config.save();
       win = null;
-    } catch (e) { };
+    } catch (e) {
+      console.error(e);
+    }
   });
 
-  win.webContents.on('new-window', (e, url, target) => {
+  win.webContents.on('new-window', (e, url) => {
     e.preventDefault();
     shell.openExternal(url);
   });
@@ -856,52 +845,8 @@ ipcMain.on('nogpu-relaunch', () => {
   setTimeout(() => app.quit(), 100);
 });
 
-// JS version number compare
-// electron 버전 비교를 위해서 삽입
-// http://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number
-
-const versionCompare = (v1, v2, options) => {
-  var lexicographical = options && options.lexicographical,
-    zeroExtend = options && options.zeroExtend,
-    v1parts = v1.split('.'),
-    v2parts = v2.split('.');
-
-  function isValidPart(x) {
-    return (lexicographical ? /^\d+[A-Za-z]*$/ : /^\d+$/).test(x);
-  }
-  if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
-    return NaN;
-  }
-  if (zeroExtend) {
-    while (v1parts.length < v2parts.length) v1parts.push("0");
-    while (v2parts.length < v1parts.length) v2parts.push("0");
-  }
-  if (!lexicographical) {
-    v1parts = v1parts.map(Number);
-    v2parts = v2parts.map(Number);
-  }
-  for (var i = 0; i < v1parts.length; ++i) {
-    if (v2parts.length == i) {
-      return 1;
-    }
-    if (v1parts[i] == v2parts[i]) {
-      continue;
-    }
-    else if (v1parts[i] > v2parts[i]) {
-      return 1;
-    }
-    else {
-      return -1;
-    }
-  }
-  if (v1parts.length != v2parts.length) {
-    return -1;
-  }
-  return 0;
-}
-
 // 컨텍스트 메뉴
-ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
+ipcMain.on('context-menu', (event, menu, isRange, Addr) => {
 
   const template = [];
   const separator = { type: 'separator' };
@@ -1040,7 +985,7 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
-ipcMain.on('twtlib-open', (event, arg) => {
+ipcMain.on('twtlib-open', () => {
   if (twtlibWin) {
     twtlibWin.focus();
     return;

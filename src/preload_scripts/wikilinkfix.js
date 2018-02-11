@@ -1,5 +1,4 @@
 'use strict';
-const Config = require('../config');
 
 module.exports = () => {
   const linkFixObserver = new MutationObserver(mutations => {
@@ -18,7 +17,7 @@ module.exports = () => {
             const postfix = link.nextSibling;
             if (!postfix) continue;
 
-            const querystring = postfix.textContent;
+            let querystring = postfix.textContent;
             if (/^\s/.test(querystring)) continue;
             querystring = querystring.split(' ')[0];
             postfix.textContent = postfix.textContent.replace(querystring, ' ');

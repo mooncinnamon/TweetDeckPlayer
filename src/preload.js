@@ -1,22 +1,15 @@
-const {remote, clipboard, ipcRenderer, shell} = require('electron');
+/* globals TD */
+const {remote, clipboard, ipcRenderer} = require('electron');
 // Guard against missing remote function properties
 // https://github.com/electron/electron/pull/7209
-try {
-  const {Menu, MenuItem, dialog} = remote;
-} catch (e) {
-  console.warn('remote error : ' + e);
-};
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const twitter = require('twitter-text');
-const twemoji = require('twemoji');
 
 const Config = require('./config');
 const VERSION = require('./version').message;
 const Util = require('./util');
 
-const PlayerMonkey = require('./preload_scripts/playermonkey');
 const WordFilter = require('./preload_scripts/wordfilter');
 const Unlinkis = require('./preload_scripts/unlinkis');
 const CBPaste = require('./preload_scripts/clipboard-paste');
@@ -67,7 +60,7 @@ var autoReload = () => {
         autoReload_alermed++;
         break;
       }
-      
+
       setTimeout(autoReload, 60000);
       return;
 
@@ -88,9 +81,9 @@ var autoReload = () => {
 };
 autoReload();
 
-const loadBlackBird = (callback) => {
+const loadBlackBird = callback => {
   var oReq = new XMLHttpRequest();
-  oReq.addEventListener("load", function () {
+  oReq.addEventListener('load', function () {
     const res = JSON.parse(this.responseText);
     if (res.client && res.client.settings && res.client.settings) {
       const tdp_settings = res.client.settings.settings.TDPSettings || {};
@@ -99,7 +92,7 @@ const loadBlackBird = (callback) => {
   });
   oReq.addEventListener('error', function () {
     callback({error: true});
-  })
+  });
   oReq.open('GET', 'https://api.twitter.com/1.1/tweetdeck/clients/blackbird/all');
   oReq.withCredentials = true;
   oReq.setRequestHeader('Content-Type', 'application/json');
@@ -107,31 +100,10 @@ const loadBlackBird = (callback) => {
   oReq.setRequestHeader('x-csrf-token', TD.util.getCsrfTokenHeader());
   //oReq.setRequestHeader('User-Agent', TD.util.getTweetDeckUserAgentString());
   oReq.send();
-}
-
-const saveBlackBird = (callback, params) => {
-  var oReq = new XMLHttpRequest();
-  oReq.addEventListener("load", function () {
-    const res = JSON.parse(this.responseText);
-    if (res.client && res.client.settings && res.client.settings) {
-      const tdp_settings = res.client.settings.settings.TDPSettings || {};
-      callback(tdp_settings);
-    }
-  });
-  oReq.addEventListener('error', function () {
-    callback({error: true});
-  })
-  oReq.open('POST', 'https://api.twitter.com/1.1/tweetdeck/clients/blackbird');
-  oReq.withCredentials = true;
-  oReq.setRequestHeader('Content-Type', 'application/json');
-  oReq.setRequestHeader('Authorization', 'Bearer ' + TD.config.bearer_token);
-  oReq.setRequestHeader('x-csrf-token', TD.util.getCsrfTokenHeader());
-  //oReq.setRequestHeader('User-Agent', TD.util.getTweetDeckUserAgentString());
-  oReq.send(JSON.stringify(params));
-}
+};
 
 ipcRenderer.on('cloud-load-config', (event, uuid) => {
-  loadBlackBird((TDPSettings) => {
+  loadBlackBird(TDPSettings => {
     if (TDPSettings.saved_timestamp) {
       event.sender.send(uuid, JSON.stringify(TDPSettings));
       return;
@@ -140,34 +112,15 @@ ipcRenderer.on('cloud-load-config', (event, uuid) => {
     return;
   });
 });
-/*
-ipcRenderer.on('cloud-save-config', (event, uuid, title) => {
-  const config = Config.load();
-  config.saved_timestamp = new Date();
-  config.saved_title = title || '';
-  if (config.bounds)
-    delete config.bounds;
-  let blackbird_acc = TD.storage.clientController.getAll()[0];
-  blackbird_acc.settings.settings.TDPSettings = config;
-  saveBlackBird(() => {
-    loadBlackBird((TDPSettings) => {
-      if (TDPSettings.saved_timestamp) {
-        event.sender.send(uuid, JSON.stringify(TDPSettings));
-        return;
-      }
-      event.sender.send(uuid, false);
-      return;
-    });
-  }, blackbird_acc);
-});
-*/
+
 
 ipcRenderer.on('cloud-save-config', (event, uuid, title) => {
   const config = Config.load();
   config.saved_timestamp = new Date();
   config.saved_title = title || '';
-  if (config.bounds)
+  if (config.bounds) {
     delete config.bounds;
+  }
   if (TD && TD.settings) {
     TD.settings.set('TDPSettings', config);
   }
@@ -179,8 +132,9 @@ ipcRenderer.on('cloud-remove-config', (event, uuid, title) => {
   const config = Config.load();
   config.saved_timestamp = new Date();
   config.saved_title = title || '';
-  if (config.bounds)
+  if (config.bounds) {
     delete config.bounds;
+  }
   if (TD && TD.settings) {
     TD.settings.set('TDPSettings', undefined);
   }
@@ -188,11 +142,11 @@ ipcRenderer.on('cloud-remove-config', (event, uuid, title) => {
   event.sender.send(uuid, true);
 });
 
-ipcRenderer.on('apply-config', event => {
+ipcRenderer.on('apply-config', () => {
   var style = '';
   let customFonts = '';
   try {
-    var { detectFont, supportedFonts } = require('detect-font');
+    var { supportedFonts } = require('detect-font');
     config = Config.load();
     window.config = config;
 
@@ -216,9 +170,6 @@ ipcRenderer.on('apply-config', event => {
 
       node.remove();
     }
-
-    // Mention/Hashtag/URL Color
-    document.body.querySelector('.js-app.application').style = `--mention-color: ${Config.data.twColorMention};--hashtag-color: ${Config.data.twColorHashtag};--url-color: ${Config.data.twColorURL}`;
 
     const cl = document.body.classList;
     cl.toggle('tdp-square-profile', config.useSquareProfileImage);
@@ -264,21 +215,13 @@ ipcRenderer.on('apply-config', event => {
 
     // Notification Alarm sound
     if (updateSound_backup === undefined) {
-      updateSound_backup = document.getElementById("update-sound").innerHTML;
+      updateSound_backup = document.getElementById('update-sound').innerHTML;
     }
 
     if (config.applyNotiAlarmSound) {
       var base64_encode = file => {
         var bitmap = fs.readFileSync(file);
         return new Buffer(bitmap).toString('base64');
-      };
-
-      var base64_decode = (base64str, file) => {
-        // create buffer object from base64 encoded string, it is important to tell the constructor that the string is base64 encoded
-        var bitmap = new Buffer(base64str, 'base64');
-        // write buffer to file
-        fs.writeFileSync(file, bitmap);
-        console.log('******** File created from base64 encoded string ********');
       };
 
       var convertDataURIToBinary = dataURI => {
@@ -302,13 +245,13 @@ ipcRenderer.on('apply-config', event => {
       var blob = new Blob([binary], {type : `audio/${ext}`});
       var blobUrl = URL.createObjectURL(blob);
 
-      document.getElementById("update-sound").innerHTML = `<source src="${blobUrl}">`;
-      document.getElementById("update-sound").pause();
-      document.getElementById("update-sound").load();
+      document.getElementById('update-sound').innerHTML = `<source src="${blobUrl}">`;
+      document.getElementById('update-sound').pause();
+      document.getElementById('update-sound').load();
     } else {
-      document.getElementById("update-sound").innerHTML = updateSound_backup;
-      document.getElementById("update-sound").pause();
-      document.getElementById("update-sound").load();
+      document.getElementById('update-sound').innerHTML = updateSound_backup;
+      document.getElementById('update-sound').pause();
+      document.getElementById('update-sound').load();
     }
   } catch (e) {
     console.warn(e);
@@ -351,7 +294,7 @@ ipcRenderer.on('command', (event, cmd) => {
     case 'selectall':
       document.execCommand('selectall');
       break;
-    case 'copyimage':
+    case 'copyimage': {
       window.toastMessage('Image downloading..');
       const nativeImage = require('electron').nativeImage;
       var request = require('request').defaults({ encoding: null });
@@ -361,7 +304,7 @@ ipcRenderer.on('command', (event, cmd) => {
           window.toastMessage('Image copied to clipboard');
         }
       });
-      break;
+    } break;
     case 'copyimageurl':
       href = Util.getOrigPath(Addr.img);
       clipboard.writeText(href);
@@ -430,9 +373,6 @@ window.addEventListener('contextmenu', e => {
   // 현재 활성화된 element
   var el = document.activeElement;
 
-  // 현재 마우스가 가리키고 있는 elements
-  var hover = document.querySelectorAll(':hover');
-
   // 선택 영역이 있는지 여부
   var is_range = document.getSelection().type === 'Range';
 
@@ -476,7 +416,7 @@ window.addEventListener('contextmenu', e => {
     const hoveredTweet = document.querySelector('article.stream-item:hover');
     const tweetText = hoveredTweet.querySelector('.js-tweet-text');
     const tweetId = hoveredTweet.getAttribute('data-tweet-id');
-    function getTextOrEmoji (node) {
+    const getTextOrEmoji = node => {
       if (node.nodeType === HTMLElement.TEXT_NODE) {
         return node.textContent;
       } else if (node.nodeType === HTMLElement.ELEMENT_NODE && node.classList.contains('emoji')) {
@@ -484,7 +424,7 @@ window.addEventListener('contextmenu', e => {
       } else {
         return '';
       }
-    }
+    };
     const textWithEmoji = Array
       .from(tweetText ? tweetText.childNodes : [])
       .map(getTextOrEmoji)
@@ -518,7 +458,6 @@ if (config.enableUnlinkis) {
 // 트윗에 첨부된 이미지를 드래그해서 저장할 수 있도록 함
 document.addEventListener('dragstart', evt => {
   var imageSrc = '';
-  var imageOrgSrc = '';
 
   if (evt.srcElement.classList.contains('js-media-image-link')) {
     // 트윗 미디어 이미지
@@ -530,7 +469,6 @@ document.addEventListener('dragstart', evt => {
 
   // 이미지인 경우
   if (imageSrc) {
-    imageOrgSrc = imageSrc;
     var image = Util.getOrigPath(imageSrc);
     var ext = image.substr(image.lastIndexOf('.') + 1);
     var filename = image.substr(image.lastIndexOf('/') + 1);
@@ -622,7 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (evt.target.id === 'account-safeguard-checkbox' || evt.target.id === 'inline-account-safeguard-checkbox') {
       var el = $('.js-compose-text');
       for (var i = 0; i < el.length; i++) {
-        var text = $(el[i]).val();
 
         // 마지막 멘션 아이디가 셀렉션 지정되는 버그 회피
         var x = el[i];
@@ -661,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       e.stopPropagation();
       $(document.activeElement).trigger($.Event('keypress', {which: e.which}));
-    } 
+    }
   });
 
   $(document).on('mouseover', '.tweet-timestamp', e => {
@@ -745,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // TweetDeck Ready Check
   $(document).on('TD.ready', () => {
     ipcRenderer.send('page-ready-tdp', this);
-        
+
     if (!Config.data.detectUpdate) window.toastMessage(TD.i(VERSION));
     setTimeout(() => {
       TD.settings.setUseStream(TD.settings.getUseStream());
@@ -753,7 +690,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
 
     // Enable emojipad
-    var emojiPadCSS = document.createElement('link');
     var dockBtn = document.querySelector('.emojipad--entry-point');
     document.body.appendChild(EmojiPad.element);
     dockBtn.addEventListener('click', e => {
@@ -785,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
       var f = TD.controller.stats.navbarSettingsClick.bind({});
       TD.controller.stats.navbarSettingsClick = () => {
         var btn = document.querySelector('a[data-action=tdpSettings]');
-        btn.addEventListener('click', e => {
+        btn.addEventListener('click', () => {
           ipcRenderer.send('open-settings');
         }, false);
         f();

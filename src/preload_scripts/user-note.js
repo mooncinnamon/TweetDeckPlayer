@@ -43,7 +43,7 @@ class UserNoteUI {
     this.root = root;
     this.textarea = root.querySelector('textarea.user-note-area');
     this.loading = root.querySelector('.user-note-loading');
-    const inputListener = event => {
+    const inputListener = () => {
       const newNote = this.textarea.value;
       UserNote.save(this.currentUserID, newNote);
     };

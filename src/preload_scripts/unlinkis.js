@@ -17,7 +17,7 @@ function Unlinkis () {
 
   //Caution: This url extractor WILL CRASH when twitter changes working method of t.co
   var tco_url_extract_regex = /location\.replace\("(.*?)"\)/;
-  var tco_url_detect = /http(|s):\/\/t.co\/[^\/]*$/;
+  var tco_url_detect = /http(|s):\/\/t.co\/[^/]*$/;
 
   var tweetdeck = location.hostname === 'tweetdeck.twitter.com';
 
@@ -79,26 +79,27 @@ function Unlinkis () {
   function tweet_handler (elem) {
     let jq = window.$;
     if (elem.tagName === 'IFRAME' && card_iframe_regex.test(elem.id)) {
-      jq(elem).on('load', function (event) {
+      jq(elem).on('load', function () {
         var card_hostname = elem.contentWindow.document.querySelector('span.SummaryCard-destination');
         if (card_hostname === null) return;
         if (linkis_card_detect.test(card_hostname.textContent)) {
-          var link = elem.contentWindow.document.querySelector('a.js-openLink');
+          let link = elem.contentWindow.document.querySelector('a.js-openLink');
           convert_and_patch(link.href, jq(link), 0);
         } else {
           var twt_link = jq(elem).closest('.tweet').find('a.twitter-timeline-link');
           var xpurl = twt_link.data('expanded-url');
           if (linkis_detect.test(xpurl)) {
-            var link = elem.contentWindow.document.querySelector('a.js-openLink');
+            let link = elem.contentWindow.document.querySelector('a.js-openLink');
             convert_and_patch(link.href, jq(link), 0);
           }
         }
       });
     } else {
+      let links;
       if (tweetdeck) {
-        var links = jq(elem).find('a.url-ext');
+        links = jq(elem).find('a.url-ext');
       } else {
-        var links = jq(elem).find('a.twitter-timeline-link');
+        links = jq(elem).find('a.twitter-timeline-link');
       }
       for (var i = 0; i < links.length; i++) {
         var match = jq(links[i]).text().match(linkis_detect);

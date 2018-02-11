@@ -69,7 +69,7 @@ module.exports = [
     _type: 'entry',
     name: 'filterUserName',
     valueType: 'bool',
-    label: "Apply Filter to User's Name",
+    label: 'Apply Filter to User\'s Name',
   },
   {
     _type: 'entry',
@@ -185,7 +185,7 @@ module.exports = [
     _type: 'entry',
     name: 'autoSavePath',
     valueType: 'text',
-    description: "Default path is 'Favorited Images' under TweetDeck Player's directory.",
+    description: 'Default path is \'Favorited Images\' under TweetDeck Player\'s directory.',
   },
   { _type: 'subsection', label: 'Image Viewer' },
   {
@@ -231,10 +231,10 @@ module.exports = [
   },
   { _type: 'subsection', label: 'Auto Reload (Hours)' },
   {
-      _type: 'entry',
-      name: 'applyAutoReload',
-      valueType: 'bool',
-      label: 'Enabled',
+    _type: 'entry',
+    name: 'applyAutoReload',
+    valueType: 'bool',
+    label: 'Enabled',
   },
   {
     _type: 'entry',

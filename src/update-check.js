@@ -9,7 +9,7 @@ module.exports = (callback = initCallback) => {
     headers: { 'User-Agent': 'TweetDeckPlayer' },
   };
 
-  https.get(option, (res) => {
+  https.get(option, res => {
     if (res.statusCode !== 200) {
       return callback(new Error('Response returns ' + res.statusCode));
     }
@@ -17,7 +17,7 @@ module.exports = (callback = initCallback) => {
     res.setEncoding('utf8');
 
     let rawdata = '';
-    res.on('data', (chunk) => rawdata += chunk);
+    res.on('data', chunk => rawdata += chunk);
 
     res.on('end', () => {
       try {

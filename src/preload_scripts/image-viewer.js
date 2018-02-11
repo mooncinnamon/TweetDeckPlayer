@@ -47,10 +47,10 @@ class TDPImageViewer {
         this.close();
       }
     });
-    image.addEventListener('load', event => {
+    image.addEventListener('load', () => {
       image.classList.remove('loading');
     });
-    image.addEventListener('click', event => {
+    image.addEventListener('click', () => {
       config.tivClickForNextImage && this.circleNext();
     });
     toolbar.querySelector('.tiv-btn-prev').addEventListener('click', event => {
@@ -62,6 +62,7 @@ class TDPImageViewer {
       this.next();
     });
     toolbar.querySelector('.tiv-btn-close').addEventListener('click', event => {
+      event.preventDefault();
       this.close();
     });
     document.body.appendChild(viewer);
@@ -128,7 +129,7 @@ module.exports = function imageViewer () {
         return i;
       });
     })
-    .on('tiv-close', event => {
+    .on('tiv-close', () => {
       viewer.close();
     })
     .on('keydown', event_ => {

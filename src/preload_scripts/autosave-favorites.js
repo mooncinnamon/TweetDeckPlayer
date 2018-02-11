@@ -50,7 +50,7 @@ function generateFilename (imgurl, index) {
   const ext = splitted[splitted.length - 1]
     .replace(/:\w+/, '');
   const now = new Date();
-  let [date, time, zone] = now.toISOString().split(/T|Z/);
+  let [date, time] = now.toISOString().split(/T|Z/);
   time = time.replace(/:/g, '');
   const result = `${date} ${time}-${index}.${ext}`;
   return result;
@@ -106,10 +106,10 @@ function favoriteAutoSave (tweet) {
 
 function tossElement (e) {
   if (typeof e === 'undefined') return;
-  if (process.platform === 'darwin'
-    ? remote.getGlobal('keyState').alt
-    : remote.getGlobal('keyState').ctrl
-  ) {
+  const keyState = remote.getGlobal('keyState');
+  const isMacOS = process.platform === 'darwin';
+  const macIgnore = isMacOS ? keyState.alt : keyState.ctrl;
+  if (macIgnore) {
     return;
   } else if (config.enableAutoSaveFav) {
     favoriteAutoSave(window.$(`[data-key="${e}"]`).eq(0));

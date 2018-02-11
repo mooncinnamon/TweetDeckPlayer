@@ -11,7 +11,7 @@ module.exports = {
   plugins: [
     'html',
   ],
-  // 'extends': 'eslint:recommended',
+  'extends': 'eslint:recommended',
   rules: {
     // 들여쓰기 2칸 공백
     'indent': [
@@ -96,6 +96,19 @@ module.exports = {
       'error',
       'multi-line',
       'consistent',
+    ],
+    'no-console': [
+      'off',
+    ],
+    'no-nested-ternary': [
+      'error',
+    ],
+    'no-trailing-spaces': [
+      'error',
+    ],
+    'multiline-ternary': [
+      'error',
+      'never',
     ],
   },
 };

@@ -66,7 +66,7 @@ module.exports = (function (win, doc) {
       const btnTab = doc.createElement('button');
       btnTab.className = 'emoji-tab';
       btnTab.innerHTML = twemoji.parse(data[i].icon);
-      btnTab.onclick = e => activateTab(i);
+      btnTab.onclick = () => activateTab(i);
       tabContainer.appendChild(btnTab);
     }
 

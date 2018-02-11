@@ -46,15 +46,13 @@ function onload () {
     if (!elem) continue;
     if (elem.type === 'checkbox') {
       elem.checked = Boolean(value);
-    } else if (elem.type === 'file') {
-
-    } else {
+    } else if (elem.type !== 'file') {
       elem.value = value;
     }
   }
   const settingForm = document.getElementById('settingform');
 
-  const save = event => {
+  const save = () => {
     if (cloudSaveFlag) {
       return;
     }
@@ -75,30 +73,33 @@ function onload () {
           continue;
         }
         // check to valid sound file
+        let blobUrl;
         try {
-          const blobUrl = URL.createObjectURL(document.querySelector('input[type="file"]').files[0]);
+          blobUrl = URL.createObjectURL(document.querySelector('input[type="file"]').files[0]);
           const audio = new Audio(blobUrl);
           audio.addEventListener('canplaythrough', () => {
             URL.revokeObjectURL(blobUrl);
             audio.remove();
             const ext = elem.files[0].name.substr(elem.files[0].name.lastIndexOf('.'));
             fs.createReadStream(elem.files[0].path).pipe(fs.createWriteStream(path.join(Util.getUserDataPath(), 'alarmfile')))
-              .on('error', function (e) {
-                vex.dialog.alert({ message: 'Cannot copy audio file'} );
+              .on('error', e => {
+                vex.dialog.alert({ message: 'Cannot copy audio file'});
+                console.error(e);
               });
-            vex.dialog.alert({ message: 'Successfully registered alarm file'} );
+            vex.dialog.alert({ message: 'Successfully registered alarm file'});
             config['notiAlarmSoundExt'] = ext;
             elem.value = '';
           });
           audio.addEventListener('error', e => {
-            vex.dialog.alert({ message: 'Invalid or not supported audio file'} );
+            vex.dialog.alert({ message: 'Invalid or not supported audio file'});
             URL.revokeObjectURL(blobUrl);
             audio.remove();
             elem.value = '';
+            console.error(e);
           });
         } catch (e) {
           /* eslint-disable quotes */
-          vex.dialog.alert({ message: 'Can\'t load file'} );
+          vex.dialog.alert({ message: 'Can\'t load file'});
           URL.revokeObjectURL(blobUrl);
           elem.value = '';
         }
@@ -123,17 +124,18 @@ window.addEventListener('beforeunload', () => saveConfig(config));
 function initializeComponents () {
   const form = document.querySelector('#settingform > section');
   for (const obj of schema) {
+    var elem;
     switch (obj._type) {
       case 'section':
-        var e = document.createElement('header');
-        e.innerHTML = `<span>${obj.label}</span>`;
-        form.appendChild(e);
+        elem = document.createElement('header');
+        elem.innerHTML = `<span>${obj.label}</span>`;
+        form.appendChild(elem);
         break;
       case 'subsection':
-        var e = document.createElement('div');
-        e.className = 'settings-item sub-header';
-        e.innerHTML = obj.label;
-        form.appendChild(e);
+        elem = document.createElement('div');
+        elem.className = 'settings-item sub-header';
+        elem.innerHTML = obj.label;
+        form.appendChild(elem);
         break;
       case 'entry':
         initializeEntries(obj, form);
@@ -161,10 +163,10 @@ function initializeEntries (entry, form) {
     case 'longtext':
       e.innerHTML = `<textarea id="${name}" rows="5"></textarea>`;
       break;
-    case 'enum':
+    case 'enum': {
       const opts = entry.options.map(x => `<option value="${x.value}">${x.label}</option>`).join('');
       e.innerHTML = `<select name="${name}" id="${name}">${opts}</select>`;
-      break;
+    } break;
     case 'alarmfile':
       e.innerHTML = `<label><input id="${name}" type="file"><label for="${name}"><div></div></label><div>${label}</div></label>`;
       // const fileInput = e.querySelector('input[type="file"]');
@@ -175,12 +177,10 @@ function initializeEntries (entry, form) {
       const text = e.querySelector(`#${name}`);
       createSlider(entry, slider, text);
     } break;
-    case 'button':
-    {
+    case 'button': {
       e.innerHTML = `<label><input id="${name}" type="button"><label for="${name}"><div></div></label><div>${label}</div></label>`;
       e.addEventListener('click', buttonHandlers[name]);
-    }
-    break;
+    } break;
     default:
       console.warn(`Unrecognized entry value type: '${entry.valueType}'`);
       break;
@@ -200,7 +200,7 @@ const buttonHandlers = {
   /*
    * Cloud Storage
    */
-  'cloudLoadConfig': (e) => {
+  cloudLoadConfig: e => {
     e.preventDefault();
     const c = ipcRenderer.sendSync('cloud-load-config');
     const r = JSON.parse(c) || {};
@@ -213,25 +213,23 @@ const buttonHandlers = {
             config = r;
             saveConfig(config);
             ipcRenderer.send('apply-config');
-            vex.dialog.alert({ message: 'Config restored.', callback: function () { remote.getCurrentWindow().reload(); }} );
+            vex.dialog.alert({ message: 'Config restored.', callback: function () {
+              remote.getCurrentWindow().reload();
+            }});
           } else { // no
             //vex.dialog.alert({ message: 'User canceled.'} );
           }
-        }
+        },
       });
     } else {
-      vex.dialog.alert({ message: 'No data on the cloud. Nothing changed.'} );
+      vex.dialog.alert({ message: 'No data on the cloud. Nothing changed.'});
     }
   },
-  'cloudSaveConfig': (e) => {
+  cloudSaveConfig: e => {
     e.preventDefault();
 
     const c = ipcRenderer.sendSync('cloud-load-config');
     const r = JSON.parse(c) || {};
-    let timestamp = '';
-    if (r.saved_timestamp) {
-      timestamp = '<br /><br />' + r.saved_timestamp;
-    }
 
     vex.dialog.prompt({
       unsafeMessage: `Do you really want to save the settings?<br />Existing settings on the cloud storage will be overwritten.${r.saved_timestamp ? `<br /><br />Latest saved: ${new Date(r.saved_timestamp)} ${(r.saved_title) ? `(${r.saved_title})` : ''}` : ``}`,
@@ -241,17 +239,17 @@ const buttonHandlers = {
           saveConfig(config);
           const result = ipcRenderer.sendSync('cloud-save-config', value);
           if (result) {
-            vex.dialog.alert({ message: 'Successfully saved on cloud.'} );
+            vex.dialog.alert({ message: 'Successfully saved on cloud.'});
           } else {
-            vex.dialog.alert({ message: 'Failed to save the settings.'} );
+            vex.dialog.alert({ message: 'Failed to save the settings.'});
           }
         } else { // no
           //vex.dialog.alert({ message: 'User canceled.'} );
         }
-      }
+      },
     });
   },
-  'cloudRemoveConfig': (e) => {
+  cloudRemoveConfig: e => {
     e.preventDefault();
     const c = ipcRenderer.sendSync('cloud-load-config');
     const r = JSON.parse(c) || {};
@@ -262,21 +260,21 @@ const buttonHandlers = {
           if (value) { // yes
             saveFunction();
             saveConfig(config);
-            const result = ipcRenderer.sendSync('cloud-remove-config', value)
+            const result = ipcRenderer.sendSync('cloud-remove-config', value);
             if (result) {
-              vex.dialog.alert({ message: 'Successfully removed data on cloud.'} );
+              vex.dialog.alert({ message: 'Successfully removed data on cloud.'});
             } else {
-              vex.dialog.alert({ message: 'Remove failed.'} );
+              vex.dialog.alert({ message: 'Remove failed.'});
             }
           } else { // no
             //vex.dialog.alert({ message: 'User canceled.'} );
           }
-        }
+        },
       });
     } else {
-      vex.dialog.alert({ message: 'No data on the cloud. Nothing changed.'} );
+      vex.dialog.alert({ message: 'No data on the cloud. Nothing changed.'});
     }
-  }
+  },
 };
 
 function createSlider (entry, slider, text) {

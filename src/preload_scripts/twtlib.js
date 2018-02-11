@@ -6,7 +6,7 @@ function makeButton (text, clickEventHandler) {
   const $ = window.$;
   const btn = $('<div>')
     .addClass('needsclick btn btn-on-blue full-width txt-left margin-b--12 padding-v--9');
-  const btnLabel = $('<span>')
+  $('<span>')
     .addClass('label padding-ls')
     .text(text)
     .appendTo(btn);
@@ -28,7 +28,7 @@ function main () {
     if (!$('.app-content').hasClass('is-open')) {
       $(document).trigger('uiComposeTweet', { type: 'tweet' });
     }
-    const textarea = $('textarea.compose-text')
+    $('textarea.compose-text')
       .val(arg)
       .trigger('change');
   });
