@@ -190,6 +190,7 @@ ipcRenderer.on('cloud-remove-config', (event, uuid, title) => {
 
 ipcRenderer.on('apply-config', event => {
   var style = '';
+  let customFonts = '';
   try {
     var { detectFont, supportedFonts } = require('detect-font');
     config = Config.load();
@@ -211,11 +212,9 @@ ipcRenderer.on('apply-config', event => {
       if (notSupported.length !== 0) {
         console.warn(`Not Supported Font(s): ${notSupported.join(', ')}`);
       }
-      style = `font-family: ${sf.join(',')} !important;`;
+      customFonts = `font-family: ${sf.join(',')} !important;`;
 
       node.remove();
-    } else {
-      style = '';
     }
 
     // Mention/Hashtag/URL Color
@@ -250,7 +249,7 @@ ipcRenderer.on('apply-config', event => {
     if (tdp_customFontStyle === null) {
       tdp_customFontStyle = document.createElement('style');
       tdp_customFontStyle.id = 'TDP_customFontStyle';
-      document.body.appendChild(tdp_customFontStyle)
+      document.body.appendChild(tdp_customFontStyle);
     }
 
     tdp_customFontStyle.innerText = `
@@ -259,6 +258,7 @@ ipcRenderer.on('apply-config', event => {
       .column {
         font-size: ${fontsize} !important;
         line-height: initial;
+        ${customFonts}
       }
     `;
 
