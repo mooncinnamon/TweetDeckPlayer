@@ -1,3 +1,4 @@
+const package = require('../package.json');
 const URL = require('url');
 const path = require('path');
 module.exports = {
@@ -39,20 +40,31 @@ module.exports = {
   },
   // 유저 데이터 폴더를 리턴함
   // 일반적인 환경 : __dirname/data/
-  // MacOS 패키징 : __dirname/<package-name> (ex. /TweetDeckPlayer.app -> /TweetDeckPlayer)
+  // MacOS 패키징 : __dirname/<package-name> (pacakge-name = /TweetDeckPlayer.app -> /TweetDeckPlayer)
   getUserDataPath () {
     const rootPath = this.getWritableRootPath();
     return path.join(rootPath, 'data');
   },
+  /* 트윗덱 플레이어의 root path를 리턴함
+  npm (or yarn) start를 통해 실행한 경우: TweetDeckPlayer/src 
+  윈도우즈에서 __dirname: TweetDeckPlayer/app.asar/src
+  macOS에서 __dirname: TweetDeckPlayer/TDP.app/Contents/Resources/app.asar/src
+  리턴값 예: TweetDeckPlayer
+  */
   getWritableRootPath () {
-    const tdpDirname = __dirname
-      .replace(/\.asar$/, '')
-      .replace('.app/Contents/Resources/app', '');
-    const isMacOS = __dirname.endsWith('.app/Contents/Resources/app');
-    if (isMacOS) {
-      return tdpDirname;
-    } else {
-      return path.join(tdpDirname, '..');
+    const sep = path.sep;
+    let tdpDirname = __dirname;
+    if (tdpDirname.endsWith(`${sep}src`)) {
+      tdpDirname = path.join(tdpDirname, '..');
     }
+    const appName = `${package.name}.app`;
+    // macOS의 "/TDP.app/Contents/Resources" 부분 제거
+    const macOSResourceDir = path.join(sep, appName, 'Contents', 'Resources');
+    tdpDirname = tdpDirname.replace(macOSResourceDir, '');
+    // app.asar 및 하위 디렉토리부분 제거;
+    while (tdpDirname.search(/\bapp\.asar\b/) !== -1) {
+      tdpDirname = path.join(tdpDirname, '..');
+    }
+    return tdpDirname;
   },
 };
