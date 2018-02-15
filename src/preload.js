@@ -206,9 +206,9 @@ ipcRenderer.on('apply-config', () => {
     tdp_customFontStyle.innerText = `
       html, body, .os-windows, .is-inverted-dark,
       .tweet-text,
+      html.dark button,
       .column {
         font-size: ${fontsize} !important;
-        line-height: initial;
         ${customFonts}
       }
     `;
@@ -539,7 +539,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.TD_mustaches['app_container.mustache'] = window.TD_mustaches['app_container.mustache'].replace('<div id="open-modal', '<div style="min-width: 650px;" id="open-modal');
 
     // create emojipad entry point
-    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache'].replace('<div class="js-send-button-container', '<div class="btn btn-on-blue padding-v--9 emojipad--entry-point"><img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;"></div> <div class="js-send-button-container').replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
+    const emojiButton = `
+      <button class="btn btn-on-blue padding-v--6 emojipad--entry-point">
+        <img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;">
+      </button>
+    `;
+    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache'].replace('<div class="js-send-button-container', `${emojiButton} <div class="js-send-button-container`).replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
 
     // inject tdp settings menu
     window.TD_mustaches['menus/topbar_menu.mustache'] = window.TD_mustaches['menus/topbar_menu.mustache'].replace('Settings{{/i}}</a> </li>', 'Settings{{/i}}</a> </li> <li class="is-selectable"><a href="#" data-action="tdpSettings">{{_i}}TweetDeck Player Settings{{/i}}</a></li>');
@@ -717,7 +722,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Integrate TDP settings
-    {
+    $(document.body).on('click', 'a[data-action="tdpSettings"]', event => {
+      event.preventDefault();
+      ipcRenderer.send('open-settings');
+    });
+    {  
+      /*
       var f = TD.controller.stats.navbarSettingsClick.bind({});
       TD.controller.stats.navbarSettingsClick = () => {
         var btn = document.querySelector('a[data-action=tdpSettings]');
@@ -726,6 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, false);
         f();
       };
+      */
     }
   });
 

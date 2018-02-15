@@ -4,8 +4,8 @@ const {ipcRenderer} = electron;
 
 function makeButton (text, clickEventHandler) {
   const $ = window.$;
-  const btn = $('<div>')
-    .addClass('needsclick btn btn-on-blue full-width txt-left margin-b--12 padding-v--9');
+  const btn = $('<button>')
+    .addClass('needsclick btn btn-on-blue full-width txt-left margin-b--12 padding-v--6');
   $('<span>')
     .addClass('label padding-ls')
     .text(text)
