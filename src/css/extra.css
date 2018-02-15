@@ -111,3 +111,9 @@ body.tdp-color-labels .js-tweet.tweet.is-retweet+.tdp-color-label {
 body.tdp-color-labels .js-tweet.tweet.is-favorite.is-retweet+.tdp-color-label {
   background-color: #3b94d9;
 }
+
+/* 트윗 입력 글자수 표시 */
+.js-character-count.is-hidden,
+html.dark .js-character-count.is-hidden {
+  display: inline !important;
+}
