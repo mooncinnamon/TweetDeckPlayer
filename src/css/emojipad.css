@@ -72,6 +72,7 @@
   padding: 2px 4px;
   width: 24px;
   height: 24px;
+  font-size: 14pt;
 }
 
 .emoji-item img.emoji {
@@ -85,26 +86,31 @@
   line-height: 0;
 }
 
-.emoji-tab {
+html.dark button.emoji-tab,
+button.emoji-tab {
   box-sizing: border-box;
   width: 12.5%;
+  padding: 3px 0;
+  border: 0;
   line-height: 0;
+  border-radius: 0 0 5px 5px;
+  font-size: 16pt;
   background-color: transparent;
+}
+
+html.dark button.emoji-tab:focus,
+html.dark button.emoji-tab:active,
+button.emoji-tab:focus,
+button.emoji-tab:active {
   border: none;
-  border-bottom-left-radius: 3px;
-  border-bottom-right-radius: 3px;
 }
 
-
-
-.emoji-tab:focus {
-  outline: none;
-}
-
-.emoji-tab.active {
+html.dark button.emoji-tab.active,
+button.emoji-tab.active {
   background-color: white;
 }
 
+html.dark .emoji-tab img.emoji,
 .emoji-tab img.emoji {
   margin: 2px 0;
   width: 18px;
@@ -113,6 +119,18 @@
   -webkit-filter: grayscale(1);
 }
 
-.emoji-tab.active img.emoji, .emoji-tab:hover img.emoji {
+html.dark .emoji-tab.active img.emoji,
+html.dark .emoji-tab:hover img.emoji,
+.emoji-tab.active img.emoji,
+.emoji-tab:hover img.emoji {
   -webkit-filter: none;
+}
+
+.emoji-page img.emoji {
+  will-change: transform;
+  transition: transform .3s;
+}
+
+.emoji-page img.emoji:hover {
+  transform: scale(2.5);
 }
