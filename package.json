@@ -37,6 +37,7 @@
     "mkdirp": "^0.5.1",
     "mz": "^2.7.0",
     "nouislider": "^8.5.1",
+    "rcedit": "^1.0.0",
     "request": "^2.83.0",
     "twemoji": "^2.2.5",
     "vex-dialog": "^1.0.7",
