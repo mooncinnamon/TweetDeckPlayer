@@ -6,15 +6,15 @@ const config = Config.load();
 const VIEWER_HTML = `
   <nav class="tiv-toolbar">
     <div class="tiv-btngroup-left">
-      <button class="btn btn-on-blue tiv-button tiv-btn-prev">
+      <button class="btn tiv-button tiv-btn-prev">
         Previous
       </button>
-      <button class="btn btn-on-blue tiv-button tiv-btn-next">
+      <button class="btn tiv-button tiv-btn-next">
         Next
       </button>
     </div>
     <div class="tiv-btngroup-right">
-      <button class="btn btn-on-blue tiv-button tiv-btn-close">
+      <button class="btn tiv-button tiv-btn-close">
         Close
       </button>
     </div>

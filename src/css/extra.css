@@ -74,6 +74,7 @@ html.dark .tdp-square-profile img.avatar {
 .tiv-btngroup-right {
   float: right;
 }
+html.dark .tiv-button,
 .tiv-button {
   display: inline-block;
   margin: 0 5px;
@@ -86,12 +87,19 @@ html.dark .tdp-square-profile img.avatar {
   font-size: 12pt;
   transition: background-color .2s;
 }
+html.dark .tiv-button:not(:disabled):hover,
 .tiv-button:not(:disabled):hover {
   background-color: #555;
 }
+html.dark .tiv-button:disabled,
 .tiv-button:disabled {
   opacity: .6;
+  background-color: #222;
   cursor: not-allowed;
+}
+html.dark .tiv-button:hover,
+.tiv-button:hover {
+  color: #eee;
 }
 
 /* 트윗 상태(리트윗, 마음) 표시 */
