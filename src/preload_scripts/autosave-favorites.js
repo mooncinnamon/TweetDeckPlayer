@@ -1,4 +1,5 @@
 const fs = require('fs');
+const URL = require('url');
 const request = require('request');
 const path = require('path');
 const Async = require('async');
@@ -46,7 +47,8 @@ function download (url, filename, callback = null) {
 }
 
 function generateFilename (imgurl, index) {
-  const splitted = imgurl.split('.');
+  const parsed = URL.parse(imgurl);
+  const splitted = parsed.pathname.split('.');
   const ext = splitted[splitted.length - 1]
     .replace(/:\w+/, '');
   const now = new Date();

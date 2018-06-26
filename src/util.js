@@ -6,9 +6,19 @@ module.exports = {
   twimg_profile: 'twimg.com/profile_images',
 
   // 트위터 이미지의 원본 크기를 가리키는 링크를 반환
+  /* NOTE 2018-06-27:
+  트위터 이미지 URL 포맷이 바뀜
+  예: "https://pbs.twimg.com/media/Dgn9V-aUwAEPBek.jpg?format=jpg&name=360x360"
+  name= 부분엔 small, orig 등이 올 수 있음.
+  일단 URL 끝에 ":orig" 넣어도 원본 크기의 이미지를 가져올 수 있음.
+  */
   getOrigPath (url) {
-    if (url.includes('pbs.twimg.com')) {
-      return url.replace(/:small$/, ':orig');
+    const parsed = URL.parse(url);
+    if (parsed.hostname === 'pbs.twimg.com') {
+      return parsed.href
+        .replace(parsed.search, '')
+        .replace(/:\w*$/, '')
+        .concat(':orig');
     } else if (url.includes('ton/data/dm')) {
       return url.replace(/:small$/, ':large');
     } else {
