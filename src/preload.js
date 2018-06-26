@@ -440,19 +440,19 @@ window.addEventListener('contextmenu', e => {
   ipcRenderer.send('context-menu', target, is_range, Addr);
 }, false);
 
-document.addEventListener('DOMContentLoaded', WordFilter);
-document.addEventListener('DOMContentLoaded', CBPaste);
-document.addEventListener('DOMContentLoaded', TwtLib);
-document.addEventListener('DOMContentLoaded', GifAutoplay);
-document.addEventListener('DOMContentLoaded', ImageViewer);
-document.addEventListener('DOMContentLoaded', SwitchAccount);
-document.addEventListener('DOMContentLoaded', WikiLinkFixer);
-document.addEventListener('DOMContentLoaded', CounterClear);
-document.addEventListener('DOMContentLoaded', UserNotes);
-
-
-if (config.enableUnlinkis) {
-  document.addEventListener('DOMContentLoaded', Unlinkis);
+if (location.hostname === 'tweetdeck.twitter.com') {
+  document.addEventListener('DOMContentLoaded', WordFilter);
+  document.addEventListener('DOMContentLoaded', CBPaste);
+  document.addEventListener('DOMContentLoaded', TwtLib);
+  document.addEventListener('DOMContentLoaded', GifAutoplay);
+  document.addEventListener('DOMContentLoaded', ImageViewer);
+  document.addEventListener('DOMContentLoaded', SwitchAccount);
+  document.addEventListener('DOMContentLoaded', WikiLinkFixer);
+  document.addEventListener('DOMContentLoaded', CounterClear);
+  document.addEventListener('DOMContentLoaded', UserNotes);
+  if (config.enableUnlinkis) {
+    document.addEventListener('DOMContentLoaded', Unlinkis);
+  }
 }
 
 // 트윗에 첨부된 이미지를 드래그해서 저장할 수 있도록 함
@@ -482,6 +482,9 @@ document.addEventListener('dragstart', evt => {
 }, false);
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (location.hostname !== 'tweetdeck.twitter.com') {
+    return;
+  }
   const TD = window.TD;
   const $ = window.$;
 
@@ -726,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault();
       ipcRenderer.send('open-settings');
     });
-    {  
+    {
       /*
       var f = TD.controller.stats.navbarSettingsClick.bind({});
       TD.controller.stats.navbarSettingsClick = () => {
