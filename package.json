@@ -11,7 +11,7 @@
     },
     {
       "name": "GaeulByul",
-      "url": "https://github.com/zn"
+      "url": "https://github.com/gaeulbyul"
     },
     {
       "name": "TintypeMolly",
@@ -19,7 +19,7 @@
     }
   ],
   "name": "TweetDeckPlayer",
-  "version": "2.34.1-G6",
+  "version": "2.34.1-G7",
   "main": "src/index.js",
   "license": "MIT",
   "repository": {
