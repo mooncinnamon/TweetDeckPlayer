@@ -487,7 +487,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const TD = window.TD;
   const $ = window.$;
-
+  // 2018-06-29: webpackJsonp 구조가 바뀌어서 이 방법으로 웹팩 모듈을 꺼내올 수 없음
+  // 해결책 나올 때 까진 임시로 기능 막아두기로 함.
+  /*
   window.Webhack = webpack => {
     webpack([], {
       webhack (_module, _exports, _require) {
@@ -526,7 +528,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!toaster) return;
     toaster.showErrorNotification({ message });
   };
-
+  */
+  function noop () {}
+  window.toastMessage = noop;
+  window.toastErrorMessage = noop;
   function patchContentEditable () {
     $('[contenteditable="true"]').css({
       opacity: 0,
