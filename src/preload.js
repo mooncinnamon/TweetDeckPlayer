@@ -10,6 +10,16 @@ const Config = require('./config');
 const VERSION = require('./version').message;
 const Util = require('./util');
 
+document.addEventListener('DOMContentLoaded', () => {
+  const ModuleRaid = require('moduleraid');
+  const moduleRaid = ModuleRaid();
+  const jq = moduleRaid.findFunction('jQuery JavaScript');
+  if (jq.length === 0) {
+    throw new Error('Fatal: jQuery not found!');
+  }
+  window.$ = window.jQuery = jq[0];
+});
+
 const WordFilter = require('./preload_scripts/wordfilter');
 const Unlinkis = require('./preload_scripts/unlinkis');
 const CBPaste = require('./preload_scripts/clipboard-paste');

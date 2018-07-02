@@ -56,7 +56,7 @@ module.exports = {
     return path.join(rootPath, 'data');
   },
   /* 트윗덱 플레이어의 root path를 리턴함
-  npm (or yarn) start를 통해 실행한 경우: TweetDeckPlayer/src 
+  npm (or yarn) start를 통해 실행한 경우: TweetDeckPlayer/src
   윈도우즈에서 __dirname: TweetDeckPlayer/app.asar/src
   macOS에서 __dirname: TweetDeckPlayer/TDP.app/Contents/Resources/app.asar/src
   리턴값 예: TweetDeckPlayer
