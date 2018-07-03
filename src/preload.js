@@ -497,38 +497,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const TD = window.TD;
   const $ = window.$;
-  // 2018-06-29: webpackJsonp 구조가 바뀌어서 이 방법으로 웹팩 모듈을 꺼내올 수 없음
-  // 해결책 나올 때 까진 임시로 기능 막아두기로 함.
-  /*
-  window.Webhack = webpack => {
-    webpack([], {
-      webhack (_module, _exports, _require) {
-        const modules = _require.c;
-        // `modules`는 (key가 숫자임에도) 배열이 아닌 JS 오브젝트이며, 직접 iterate할 수 없다.
-        // 따라서 Object.keys로 key의 배열을 구하고 이걸 iterate한다.
-        const keys = Object.keys(modules);
-        _module.exports = {
-          _require,
-          extractModuleByMethodName (name) {
-            let result = null;
-            for (const key of keys) {
-              const mod = modules[key].exports;
-              if (typeof mod === 'object' && typeof mod[name] === 'function') {
-                result = mod;
-                break;
-              }
-            }
-            return result;
-          },
-        };
-      },
-    });
-    return webpack([], [], ['webhack']);
-  };
-  const webhack = window.Webhack(window.webpackJsonp);
-  const toaster = webhack.extractModuleByMethodName('showNotification');
-  if (!toaster) {
+  let toaster;
+  try {
+    toaster = window.findFunction('showNotification')[0];
+  } catch (e) {
     console.warn('Warning!, failed to load "toaster" module.');
+    console.warn('Error: ', e);
+    toaster = null;
   }
   window.toastMessage = message => {
     if (!toaster) return;
@@ -538,10 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!toaster) return;
     toaster.showErrorNotification({ message });
   };
-  */
-  function noop () {}
-  window.toastMessage = noop;
-  window.toastErrorMessage = noop;
   function patchContentEditable () {
     $('[contenteditable="true"]').css({
       opacity: 0,
