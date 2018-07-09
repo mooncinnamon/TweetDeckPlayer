@@ -19,14 +19,13 @@ module.exports = () => {
 
             let querystring = postfix.textContent;
             if (/^\s/.test(querystring)) continue;
-            querystring = querystring.split(' ')[0];
-            postfix.textContent = postfix.textContent.replace(querystring, ' ');
+            querystring = /\S+/.exec(querystring)[0];
+            postfix.textContent = postfix.textContent.replace(querystring, '');
             querystring = decodeURI(querystring);
             const fixedURL = `${fullurl}${encodeURI(querystring)}`;
             link.setAttribute('href', fixedURL);
             link.setAttribute('data-full-url', fixedURL);
             link.setAttribute('title', `${fixedURL}\n(fixed from "${querystring}")`);
-            link.style.color = '#35d4c7';
             link.textContent = fixedURL;
           }
         }
