@@ -513,12 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!toaster) return;
     toaster.showErrorNotification({ message });
   };
-  function patchContentEditable () {
-    $('[contenteditable="true"]').css({
-      opacity: 0,
-      pointerEvents: 'none',
-    });
-  }
   if (window.TD_mustaches) {
     // version
     window.TD_mustaches['version.mustache'] = `${VERSION} (TweetDeck {{version}}{{#buildIDShort}}-{{buildIDShort}}{{/buildIDShort}})`;
@@ -680,7 +674,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Config.data.detectUpdate) window.toastMessage(TD.i(VERSION));
     setTimeout(() => {
       TD.settings.setUseStream(TD.settings.getUseStream());
-      patchContentEditable();
     }, 3000);
 
     // Enable emojipad
@@ -715,18 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault();
       ipcRenderer.send('open-settings');
     });
-    {
-      /*
-      var f = TD.controller.stats.navbarSettingsClick.bind({});
-      TD.controller.stats.navbarSettingsClick = () => {
-        var btn = document.querySelector('a[data-action=tdpSettings]');
-        btn.addEventListener('click', () => {
-          ipcRenderer.send('open-settings');
-        }, false);
-        f();
-      };
-      */
-    }
   });
 
 });
