@@ -117,17 +117,18 @@ global.keyState.alt = false;
 Config.load();
 
 // 프로그램의 중복실행 방지
-var existInst = app.makeSingleInstance(() => {
-  // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
-  if (win) {
-    win.show();
-    win.focus();
-  }
-});
-
+var existInst = app.requestSingleInstanceLock();
 // 인스턴스가 존재하는 경우 프로그램 종료
-if (existInst) {
+if (!existInst) {
   app.quit();
+} else {
+  app.on('second-instance', () => {
+    // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
+    if (win) {
+      win.show();
+      win.focus();
+    }
+  });
 }
 
 // 렌더러 프로세스가 죽었을때 이벤트
