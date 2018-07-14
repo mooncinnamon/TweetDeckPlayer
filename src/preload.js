@@ -518,8 +518,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.TD_mustaches['version.mustache'] = `${VERSION} (TweetDeck {{version}}{{#buildIDShort}}-{{buildIDShort}}{{/buildIDShort}})`;
 
     // set min_width to modal context
-    window.TD_mustaches['modal/modal_context.mustache'] = window.TD_mustaches['modal/modal_context.mustache'].replace('<div class="js-modal-context', '<div style="min-width: 560px;" class="js-modal-context');
-    window.TD_mustaches['app_container.mustache'] = window.TD_mustaches['app_container.mustache'].replace('<div id="open-modal', '<div style="min-width: 650px;" id="open-modal');
+    window.TD_mustaches['modal/modal_context.mustache'] = window.TD_mustaches['modal/modal_context.mustache']
+      .replace('<div class="js-modal-context', '<div style="min-width: 560px;" class="js-modal-context');
+    window.TD_mustaches['app_container.mustache'] = window.TD_mustaches['app_container.mustache']
+      .replace('<div id="open-modal', '<div style="min-width: 650px;" id="open-modal');
 
     // create emojipad entry point
     const emojiButton = `
@@ -527,13 +529,22 @@ document.addEventListener('DOMContentLoaded', () => {
         <img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;">
       </button>
     `;
-    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache'].replace('<div class="js-send-button-container', `${emojiButton} <div class="js-send-button-container`).replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
+    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache']
+      .replace('<div class="js-send-button-container', `${emojiButton} <div class="js-send-button-container`)
+      .replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
 
     // inject tdp settings menu
-    window.TD_mustaches['menus/topbar_menu.mustache'] = window.TD_mustaches['menus/topbar_menu.mustache'].replace('Settings{{/i}}</a> </li>', 'Settings{{/i}}</a> </li> <li class="is-selectable"><a href="#" data-action="tdpSettings">{{_i}}TweetDeck Player Settings{{/i}}</a></li>');
+    const tdpSettingsItem = `
+      <li class="is-selectable">
+        <a href="#" data-action="tdpSettings">{{_i}}TweetDeck Player Settings{{/i}}</a>
+      </li>
+    `;
+    window.TD_mustaches['menus/topbar_menu.mustache'] = window.TD_mustaches['menus/topbar_menu.mustache']
+      .replace('Settings{{/i}}</a> </li>', `Settings{{/i}}</a> </li> ${tdpSettingsItem}`);
 
     // inject tweet indicator label
-    window.TD_mustaches['status/tweet_single.mustache'] = window.TD_mustaches['status/tweet_single.mustache'].replace(/<\/div>$/, '</div><div class="tdp-color-label"></div>');
+    window.TD_mustaches['status/tweet_single.mustache'] = window.TD_mustaches['status/tweet_single.mustache']
+      .replace(/<\/div>$/, '</div><div class="tdp-color-label"></div>');
   }
 
   if (document.title === 'TweetDeck') {
