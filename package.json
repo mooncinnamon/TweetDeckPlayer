@@ -19,7 +19,7 @@
     }
   ],
   "name": "TweetDeckPlayer",
-  "version": "2.34.1-G9",
+  "version": "2.34.1-G10",
   "main": "src/index.js",
   "license": "MIT",
   "repository": {
