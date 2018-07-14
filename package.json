@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "csscomb": "^4.2.0",
-    "electron": "^2.0.10",
+    "electron": "^3.0.2",
     "electron-packager": "^8.0.0",
     "eslint": "^4.19.1",
     "eslint-plugin-html": "^4.0.6",
