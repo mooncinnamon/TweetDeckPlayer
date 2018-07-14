@@ -639,12 +639,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', setKeyCheck);
 
   // Favorite to Image Save
-  var processFavorite = TD.services.TwitterClient.prototype.favorite.toString().substr(17);
-  processFavorite = processFavorite.substr(0, processFavorite.length - 1);
+  const originalFavorite = TD.services.TwitterClient.prototype.favorite;
+  TD.services.TwitterClient.prototype.favorite = function (e, t, i) {
+    AutoSaveFav(e);
+    return originalFavorite.call(this, e, t, i);
+  };
 
-  window.AutoSaveFav = AutoSaveFav;
-  processFavorite = 'AutoSaveFav(e);' + processFavorite;
-  TD.services.TwitterClient.prototype.favorite = Function('e,t,i', processFavorite);
   // Fast Retweet
   TD.services.TwitterStatus.prototype.retweet$REAL = TD.services.TwitterStatus.prototype.retweet;
   TD.services.TwitterStatus.prototype.retweet = function () {
