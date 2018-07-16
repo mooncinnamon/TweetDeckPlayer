@@ -117,6 +117,18 @@ global.keyState.alt = false;
 Config.load();
 
 // 프로그램의 중복실행 방지
+var existInst = app.makeSingleInstance(() => {
+  // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
+  if (win) {
+    win.show();
+    win.focus();
+  }
+});
+if (existInst) {
+  app.quit();
+}
+// Electron v3에선 makeSingleInstance가 deprecated되었음.
+/*
 var existInst = app.requestSingleInstanceLock();
 // 인스턴스가 존재하는 경우 프로그램 종료
 if (!existInst) {
@@ -130,6 +142,7 @@ if (!existInst) {
     }
   });
 }
+*/
 
 // 렌더러 프로세스가 죽었을때 이벤트
 app.on('gpu-process-crashed', () => {});
