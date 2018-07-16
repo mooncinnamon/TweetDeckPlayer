@@ -1,6 +1,10 @@
 # 트윗덱 플레이어 ChangeLog
 http://github.com/sokcuri/TweetDeckPlayer/releases
 
+트윗덱 플레이어 v2.34.1-G11 (2018-07-16)
+-----------------------------
+* `app.requestSingleInstanceLock is not a function` 오류 고침
+
 트윗덱 플레이어 v2.34.1-G10 (2018-07-14)
 -----------------------------
 * 마음글 자동저장 기능 미작동현상을 고쳤습니다.
