@@ -667,8 +667,13 @@ app.on('ready', () => {
   });
 
   win.webContents.on('new-window', (e, url) => {
-    e.preventDefault();
-    shell.openExternal(url);
+    // 트윗덱 계정추가 시 뜨는 팝업은 예외적으로 내부 브라우저로 열게 한다.
+    // 나머지 사이트는 외부 브라우저를 사용하도록.
+    const isTwitterAuth = url.startsWith('https://twitter.com/teams/authorize');
+    if (!isTwitterAuth) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
   });
 
   // MacOS Application menu
