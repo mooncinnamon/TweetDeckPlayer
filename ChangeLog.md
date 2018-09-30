@@ -1,6 +1,10 @@
 # 트윗덱 플레이어 ChangeLog
 http://github.com/sokcuri/TweetDeckPlayer/releases
 
+트윗덱 플레이어 v2.34.1-G12 (2018-09-30)
+-----------------------------
+* 트윗덱 계정추가할 때 뜨는 팝업 페이지는 내부 브라우저로 열도록 하였습니다.
+
 트윗덱 플레이어 v2.34.1-G11 (2018-07-16)
 -----------------------------
 * `app.requestSingleInstanceLock is not a function` 오류 고침
