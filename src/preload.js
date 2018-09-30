@@ -451,17 +451,42 @@ window.addEventListener('contextmenu', e => {
 }, false);
 
 if (location.hostname === 'tweetdeck.twitter.com') {
-  document.addEventListener('DOMContentLoaded', WordFilter);
-  document.addEventListener('DOMContentLoaded', CBPaste);
-  document.addEventListener('DOMContentLoaded', TwtLib);
-  document.addEventListener('DOMContentLoaded', GifAutoplay);
-  document.addEventListener('DOMContentLoaded', ImageViewer);
-  document.addEventListener('DOMContentLoaded', SwitchAccount);
-  document.addEventListener('DOMContentLoaded', WikiLinkFixer);
-  document.addEventListener('DOMContentLoaded', CounterClear);
-  document.addEventListener('DOMContentLoaded', UserNotes);
-  if (config.enableUnlinkis) {
-    document.addEventListener('DOMContentLoaded', Unlinkis);
+  if (location.pathname === '/') {
+    document.addEventListener('DOMContentLoaded', WordFilter);
+    document.addEventListener('DOMContentLoaded', CBPaste);
+    document.addEventListener('DOMContentLoaded', TwtLib);
+    document.addEventListener('DOMContentLoaded', GifAutoplay);
+    document.addEventListener('DOMContentLoaded', ImageViewer);
+    document.addEventListener('DOMContentLoaded', SwitchAccount);
+    document.addEventListener('DOMContentLoaded', WikiLinkFixer);
+    document.addEventListener('DOMContentLoaded', CounterClear);
+    document.addEventListener('DOMContentLoaded', UserNotes);
+    if (config.enableUnlinkis) {
+      document.addEventListener('DOMContentLoaded', Unlinkis);
+    }
+  } else if (location.pathname === '/web/success.html') {
+    // 트윗덱 계정추가 성공화면 (https://tweetdeck.twitter.com/web/success.html)
+    //location.href='https://tweetdeck.twitter.com/web/success.html'
+    document.addEventListener('DOMContentLoaded', () => {
+      const msgs = [
+        '잠시 후에 추가된 계정이 나타납니다. 이 창은 닫으셔도 좋습니다. - TweetDeck Player',
+        '(만약 나타나지 않는다면 트윗덱 플레이어를 재실행해보시기 바랍니다.)',
+      ];
+      msgs.forEach(msg => {
+        const elem = document.createElement('p');
+        Object.assign(elem.style, {
+          fontSize: '16pt',
+          fontWeight: 'bold',
+          backgroundColor: 'white',
+          color: 'black',
+        });
+        elem.textContent = msg;
+        document.body.appendChild(elem);
+      });
+      window.setTimeout(() => {
+        window.close();
+      }, 1000 * 15);
+    });
   }
 }
 
