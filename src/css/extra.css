@@ -125,3 +125,7 @@ body.tdp-color-labels .js-tweet.tweet.is-favorite.is-retweet+.tdp-color-label {
 html.dark .js-character-count.is-hidden {
   display: inline !important;
 }
+
+textarea.js-compose-text {
+  word-break: keep-all;
+}
