@@ -3,7 +3,6 @@ const path = require('path');
 const _ = require('lodash');
 const Util = require('../util');
 const Config = require('../config');
-const insertStyle = require('./playermonkey').GM_addStyle;
 
 const config = Config.load();
 const dataPath = Util.getUserDataPath();
@@ -89,28 +88,7 @@ const USER_NOTE_HTML = `
   </div>
 `;
 
-const USER_NOTE_CSS = `
-  #user-note-app {
-    padding: 3px;
-    font-size: 12pt;
-    background-color: #e1e8ed;
-    color: #292f33;
-  }
-  .user-note-area {
-    min-height: 80px;
-    max-height: 100px;
-  }
-  .user-note-control {
-    margin: 3px;
-    font-size: 10pt;
-  }
-  .user-note-loading.loaded {
-    display: none;
-  }
-`;
-
 module.exports = () => {
-  insertStyle(USER_NOTE_CSS);
   window.TD_mustaches['twitter_profile.mustache'] += TEMPLATE_HACK_HTML;
   const observeMe = document.querySelector('.js-modals-container');
   const observer = new MutationObserver(mutations => {

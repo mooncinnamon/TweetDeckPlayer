@@ -217,8 +217,13 @@ ipcRenderer.on('apply-config', () => {
       html, body, .os-windows, .is-inverted-dark,
       .tweet-text,
       html.dark button,
+      textarea.js-compose-text,
+      .user-note-area, /* 사용자노트 */
       .column {
         font-size: ${fontsize} !important;
+        ${customFonts}
+      }
+      .tdp-custom-fonts {
         ${customFonts}
       }
     `;
