@@ -126,6 +126,36 @@ html.dark .js-character-count.is-hidden {
   display: inline !important;
 }
 
+/*
+트윗 입력칸에서, word-wrap된 단어 있을 때
+한글 입력하면 줄바꿈 문자가 들어가는 버그 고침
+참고: https://github.com/gaeulbyul/TweetDeckPlayer/issues/2
+*/
 textarea.js-compose-text {
   word-break: keep-all;
+}
+
+/* 사용자노트 기능 관련 */
+#user-note-app {
+  padding: 3px;
+  font-size: 12pt;
+  background-color: #e1e8ed;
+  color: #292f33;
+}
+html.dark #user-note-app {
+  background-color: #15202b;
+}
+html.dark .user-note-control {
+  color: #8899a6;
+}
+.user-note-area {
+  min-height: 80px;
+  max-height: 100px;
+}
+.user-note-control {
+  margin: 3px;
+  font-size: 10pt;
+}
+.user-note-loading.loaded {
+  display: none;
 }
