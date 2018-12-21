@@ -124,18 +124,6 @@ module.exports = [
     valueType: 'bool',
     label: 'Open Images in Popup',
   },
-  { _type: 'subsection', label: 'GIF Autoplay' },
-  {
-    _type: 'entry',
-    name: 'gifAutoplay',
-    valueType: 'enum',
-    description: '* <b>Requires reload to apply.</b>',
-    options: [
-      { value: 'default', label: 'Autoplay (Default)' },
-      { value: 'mouseenter', label: 'Hover to Play' },
-      { value: 'click', label: 'Click to Play' },
-    ],
-  },
   { _type: 'section', label: 'Notification' },
   { _type: 'subsection', label: 'Alarm Sound' },
   {

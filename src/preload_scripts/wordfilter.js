@@ -47,11 +47,14 @@ module.exports = () => {
       event.stopImmediatePropagation();
       tweet.innerHTML = originalHTML;
       tweet.removeEventListener('click', revealOriginal);
-      // GIF 움짤이 있다면 이를 재생시킨다.
-      let gif = tweet.querySelector('video.js-media-gif');
-      if (gif && gif.paused && config.gifAutoplay === 'default') {
-        gif.play();
-      }
+      try {
+        // GIF 움짤이 있다면 이를 재생시킨다.
+        const gif = tweet.querySelector('video.js-media-gif');
+        const shouldAutoPlay = window.TD.settings.getAutoPlayGifs();
+        if (gif && gif.paused && shouldAutoPlay) {
+          gif.play();
+        }
+      } catch (e) { /* */ }
     }
     tweet.innerHTML = '';
     tweet.appendChild(maskMessage);
