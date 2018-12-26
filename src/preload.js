@@ -635,6 +635,14 @@ document.addEventListener('DOMContentLoaded', () => {
     target.setAttribute('title', date.toLocaleString());
   });
 
+  $(document).on('mouseover', '.account-inline', event => {
+    const target = event.currentTarget;
+    const nickname = target.querySelector('.fullname').textContent;
+    // username already contains @-prefix
+    const username = target.querySelector('.username').textContent;
+    target.setAttribute('title', `${nickname} (${username})`);
+  })
+
   // Minimize Scroll Animation for Tweet Selection
   Math.min = (a, b) => {
     if (config.minimizeScrollAnimForTweetSel) {
