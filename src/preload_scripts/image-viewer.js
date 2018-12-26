@@ -123,10 +123,9 @@ module.exports = function imageViewer () {
       viewer.update();
       viewer.show();
       // Image preload
-      parameter.images.map(img => {
+      parameter.images.forEach(img => {
         const i = new Image;
         i.src = img.url;
-        return i;
       });
     })
     .on('tiv-close', () => {
@@ -164,6 +163,26 @@ module.exports = function imageViewer () {
         }
       }
     });
+  $(document.body).on('mouseover', 'a[rel=mediaPreview]', event => {
+    if (!config.altImageViewer) return;
+    const target = $(event.currentTarget);
+    const container = target.parents('.js-media');
+    const images = container.find('a[rel=mediaPreview]');
+    images.each((_, image) => {
+      const $image = $(image);
+      const mediaImg = $image.find('img.media-img');
+      let origUrl = null;
+      if (mediaImg.length > 0) {
+        origUrl = Util.getOrigPath(mediaImg.attr('src'));
+      } else {
+        origUrl = Util.getOrigPath(extractURL($image));
+      }
+      if (origUrl) {
+        const i = new Image;
+        i.src = origUrl;
+      }
+    });
+  });
   $(document.body).on('click', 'a[rel=mediaPreview]', event => {
     if (!config.altImageViewer) return;
     const target = $(event.currentTarget);
