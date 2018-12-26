@@ -910,7 +910,7 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr) => {
       if (Config.data.enableOpenImageinPopup) {
         template.push(separator);
         template.push(sub_open_img(event.sender));
-        template.push(sub_open_img_popup(event.sender));
+        // template.push(sub_open_img_popup(event.sender));
         template.push(separator);
       } else {
         template.push(sub_open_img(event.sender));
@@ -921,6 +921,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr) => {
       break;
 
     case 'link':
+      template.push(sub_open_link(event.sender));
+      /*
       if (!Config.data.enableOpenLinkinPopup) {
         template.push(sub_open_link(event.sender));
       } else {
@@ -928,6 +930,7 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr) => {
         template.push(sub_open_link_popup(event.sender));
         template.push(separator);
       }
+      */
       template.push(sub_save_link(event.sender, Addr));
       template.push(sub_copy_link(event.sender));
       template.push(separator);
