@@ -10,7 +10,12 @@ const Config = require('./config');
 const VERSION = require('./version').message;
 const Util = require('./util');
 
+const isTweetdeck = location.hostname === 'tweetdeck.twitter.com';
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (!isTweetdeck) {
+    return;
+  }
   const ModuleRaid = require('moduleraid');
   const moduleRaid = ModuleRaid();
   const jq = moduleRaid.findFunction('jQuery JavaScript');
@@ -25,7 +30,6 @@ const Unlinkis = require('./preload_scripts/unlinkis');
 const CBPaste = require('./preload_scripts/clipboard-paste');
 const TwtLib = require('./preload_scripts/twtlib');
 const AutoSaveFav = require('./preload_scripts/autosave-favorites');
-const EmojiPad = require('./preload_scripts/emojipad');
 const QuoteWithoutNotification = require('./preload_scripts/quote-without-notification');
 const ImageViewer = require('./preload_scripts/image-viewer');
 const SwitchAccount = require('./preload_scripts/switch-account');
@@ -454,7 +458,7 @@ window.addEventListener('contextmenu', e => {
   ipcRenderer.send('context-menu', target, is_range, Addr);
 }, false);
 
-if (location.hostname === 'tweetdeck.twitter.com') {
+if (isTweetdeck) {
   if (location.pathname === '/') {
     document.addEventListener('DOMContentLoaded', WordFilter);
     document.addEventListener('DOMContentLoaded', CBPaste);
@@ -520,7 +524,7 @@ document.addEventListener('dragstart', evt => {
 }, false);
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (location.hostname !== 'tweetdeck.twitter.com') {
+  if (!isTweetdeck) {
     return;
   }
   const TD = window.TD;
@@ -641,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // username already contains @-prefix
     const username = target.querySelector('.username').textContent;
     target.setAttribute('title', `${nickname} (${username})`);
-  })
+  });
 
   // Minimize Scroll Animation for Tweet Selection
   Math.min = (a, b) => {
@@ -717,6 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // TweetDeck Ready Check
   $(document).on('TD.ready', () => {
     ipcRenderer.send('page-ready-tdp', this);
+    const EmojiPad = require('./preload_scripts/emojipad');
 
     if (!Config.data.detectUpdate) window.toastMessage(TD.i(VERSION));
     setTimeout(() => {
