@@ -425,6 +425,7 @@ app.on('ready', () => {
   preference.autoHideMenuBar = true;
   preference.webPreferences = {
     nodeIntegration: false,
+    contextIsolation: false,
     preload: path.join(__dirname, 'preload.js'),
   };
   win = new BrowserWindow(preference);
