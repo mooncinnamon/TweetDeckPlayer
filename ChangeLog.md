@@ -1,7 +1,7 @@
 # 트윗덱 플레이어 ChangeLog
 http://github.com/sokcuri/TweetDeckPlayer/releases
 
-트윗덱 플레이어 v2.34.1-G14 ( *TBD* )
+트윗덱 플레이어 v2.34.1-G14 ( 2018-12-30 )
 * Electron을 업데이트했습니다. (v4.0.0, Chromium v69)
 * 유니코드 11.0의 에모지를 추가했습니다.
 * 트윗덱 플레이어의 이미지뷰어에서 이미지 로딩속도를 약간 향상시켰습니다.
