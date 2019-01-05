@@ -35,7 +35,8 @@ const ImageViewer = require('./preload_scripts/image-viewer');
 const SwitchAccount = require('./preload_scripts/switch-account');
 const WikiLinkFixer = require('./preload_scripts/wikilinkfix');
 const CounterClear = require('./preload_scripts/counterclear');
-const UserNotes = require('./preload_scripts/user-note.js');
+const UserNotes = require('./preload_scripts/user-note');
+const Bookmark = require('./preload_scripts/bookmark');
 
 // 설정 파일 읽기
 var config = Config.load();
@@ -468,6 +469,7 @@ if (isTweetdeck) {
     document.addEventListener('DOMContentLoaded', WikiLinkFixer);
     document.addEventListener('DOMContentLoaded', CounterClear);
     document.addEventListener('DOMContentLoaded', UserNotes);
+    document.addEventListener('DOMContentLoaded', Bookmark);
     if (config.enableUnlinkis) {
       document.addEventListener('DOMContentLoaded', Unlinkis);
     }
