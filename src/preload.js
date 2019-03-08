@@ -525,6 +525,42 @@ document.addEventListener('dragstart', evt => {
   }
 }, false);
 
+async function initEmojiPad () {
+  const EmojiPad = require('./preload_scripts/emojipad');
+  document.body.appendChild(EmojiPad.element);
+  const sleep = n => new Promise(resolve => window.setTimeout(resolve, n));
+  let dockBtn;
+  while (!dockBtn) {
+    await sleep(1000);
+    dockBtn = document.querySelector('.emojipad--entry-point');
+  }
+  console.debug('emojipad: entry-point found!');
+  dockBtn.disabled = false;
+  dockBtn.addEventListener('click', e => {
+    EmojiPad.show(e.clientX, e.clientY);
+
+    var el = EmojiPad.element;
+    var rect = el.getClientRects()[0];
+
+    if (window.innerWidth - rect.left - 10 < rect.width) {
+      el.style.left = `${window.innerWidth - rect.width - 10}px`;
+    }
+    if (window.innerHeight - rect.top - 10 < rect.height) {
+      el.style.top = `${window.innerHeight - rect.height - 10}px`;
+    }
+  });
+  document.body.addEventListener('click', e => {
+    if (e.target !== dockBtn && EmojiPad.isOpen) EmojiPad.hide();
+  }, false);
+  EmojiPad.onEmojiClick = chr => {
+    var txt = document.getElementById('docked-textarea');
+    txt.value += chr;
+    var evt = document.createEvent('HTMLEvents');
+    evt.initEvent('change', false, true);
+    txt.dispatchEvent(evt);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!isTweetdeck) {
     return;
@@ -559,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // create emojipad entry point
     const emojiButton = `
-      <button class="btn btn-on-blue padding-v--6 emojipad--entry-point">
+      <button disabled class="btn btn-on-blue padding-v--6 emojipad--entry-point">
         <img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;">
       </button>
     `;
@@ -723,40 +759,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // TweetDeck Ready Check
   $(document).on('TD.ready', () => {
     ipcRenderer.send('page-ready-tdp', this);
-    const EmojiPad = require('./preload_scripts/emojipad');
-
+    // 2019-03-09 gaeulbyul:
+    // TD.ready 이벤트에도 emoji entry-point 버튼을 사용할 수가 없다. (lazy loading 같은 걸로 추정)
+    // 따라서, setTimeout을 통해 버튼을 사용할 수 있을때까지 기다린 후 작동하는 함수를 별도로 구현함
+    initEmojiPad();
     if (!Config.data.detectUpdate) window.toastMessage(TD.i(VERSION));
     setTimeout(() => {
       TD.settings.setUseStream(TD.settings.getUseStream());
     }, 3000);
-
-    // Enable emojipad
-    var dockBtn = document.querySelector('.emojipad--entry-point');
-    document.body.appendChild(EmojiPad.element);
-    dockBtn.addEventListener('click', e => {
-      EmojiPad.show(e.clientX, e.clientY);
-
-      var el = EmojiPad.element;
-      var rect = el.getClientRects()[0];
-
-      if (window.innerWidth - rect.left - 10 < rect.width) {
-        el.style.left = `${window.innerWidth - rect.width - 10}px`;
-      }
-      if (window.innerHeight - rect.top - 10 < rect.height) {
-        el.style.top = `${window.innerHeight - rect.height - 10}px`;
-      }
-    });
-    document.body.addEventListener('click', e => {
-      if (e.target !== dockBtn && EmojiPad.isOpen) EmojiPad.hide();
-    }, false);
-    EmojiPad.onEmojiClick = chr => {
-      var txt = document.getElementById('docked-textarea');
-      txt.value += chr;
-      var evt = document.createEvent('HTMLEvents');
-      evt.initEvent('change', false, true);
-      txt.dispatchEvent(evt);
-    };
-
     // Integrate TDP settings
     $(document.body).on('click', 'a[data-action="tdpSettings"]', event => {
       event.preventDefault();
