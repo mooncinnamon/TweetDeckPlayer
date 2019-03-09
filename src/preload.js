@@ -535,23 +535,21 @@ async function initEmojiPad () {
     dockBtn = document.querySelector('.emojipad--entry-point');
   }
   console.debug('emojipad: entry-point found!');
-  dockBtn.disabled = false;
-  dockBtn.addEventListener('click', e => {
-    EmojiPad.show(e.clientX, e.clientY);
-
-    var el = EmojiPad.element;
-    var rect = el.getClientRects()[0];
-
-    if (window.innerWidth - rect.left - 10 < rect.width) {
-      el.style.left = `${window.innerWidth - rect.width - 10}px`;
-    }
-    if (window.innerHeight - rect.top - 10 < rect.height) {
-      el.style.top = `${window.innerHeight - rect.height - 10}px`;
+  document.body.addEventListener('click', e => {
+    if (event.target.matches('.emojipad--entry-point')) {
+      EmojiPad.show(e.clientX, e.clientY);
+      var el = EmojiPad.element;
+      var rect = el.getClientRects()[0];
+      if (window.innerWidth - rect.left - 10 < rect.width) {
+        el.style.left = `${window.innerWidth - rect.width - 10}px`;
+      }
+      if (window.innerHeight - rect.top - 10 < rect.height) {
+        el.style.top = `${window.innerHeight - rect.height - 10}px`;
+      }
+    } else if (e.target !== dockBtn && EmojiPad.isOpen) {
+      EmojiPad.hide();
     }
   });
-  document.body.addEventListener('click', e => {
-    if (e.target !== dockBtn && EmojiPad.isOpen) EmojiPad.hide();
-  }, false);
   EmojiPad.onEmojiClick = chr => {
     var txt = document.getElementById('docked-textarea');
     txt.value += chr;
@@ -595,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // create emojipad entry point
     const emojiButton = `
-      <button disabled class="btn btn-on-blue padding-v--6 emojipad--entry-point">
+      <button class="btn btn-on-blue padding-v--6 emojipad--entry-point">
         <img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;">
       </button>
     `;
