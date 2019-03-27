@@ -10,11 +10,13 @@ const child_process = require('child_process');
 const URL = require('url');
 const Util = require('./util');
 
+// 설정
+const Config = require('./config');
+
 // set to userdata folder
 app.setPath('userData', Util.getUserDataPath());
 
-// 설정
-const Config = require('./config');
+app.commandLine.appendSwitch('force-color-profile', 'srgb')
 
 const createUUIDv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
