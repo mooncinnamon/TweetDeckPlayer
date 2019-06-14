@@ -94,6 +94,13 @@ module.exports = [
   },
   {
     _type: 'entry',
+    name: 'enableRtAndFav',
+    valueType: 'bool',
+    label: 'Enable Retweet and Favorite combo button',
+    description: '<b>Requires reload to apply.</b>',
+  },
+  {
+    _type: 'entry',
     name: 'notifyFastRetweet',
     valueType: 'bool',
     label: 'Show Notification after Fast Retweet',
