@@ -668,16 +668,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  $(document).on('mouseover', '.tweet-timestamp', e => {
+  $(document).on('mouseenter', '.tweet-timestamp:not([title])', e => {
     const target = e.currentTarget;
     const time = target.getAttribute('data-time');
+    if (!time) {
+      return
+    }
     const date = new Date(parseInt(time, 10));
     target.setAttribute('title', date.toLocaleString());
   });
 
-  $(document).on('mouseover', '.account-inline', event => {
+  $(document).on('mouseenter', '.account-inline:not([title])', event => {
     const target = event.currentTarget;
-    const nickname = target.querySelector('.fullname').textContent;
+    const nicknameElem = target.querySelector('.fullname');
+    if (!nicknameElem) {
+      return;
+    }
+    const nickname = nicknameElem.textContent;
     // username already contains @-prefix
     const username = target.querySelector('.username').textContent;
     target.setAttribute('title', `${nickname} (${username})`);
