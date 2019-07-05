@@ -19,6 +19,7 @@ module.exports = {
       const extension = '.' + (extensionMatch ? extensionMatch[1] : 'jpg')
       let filename = parsed.href
         .replace(parsed.search, '')
+        .replace(/:\w*$/, '')
       if (!filename.endsWith(extension)) {
         filename += extension
       }
