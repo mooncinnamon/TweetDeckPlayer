@@ -15,10 +15,15 @@ module.exports = {
   getOrigPath (url) {
     const parsed = URL.parse(url);
     if (parsed.hostname === 'pbs.twimg.com') {
-      return parsed.href
+      const extensionMatch = /\bformat=(\w+?)\b/.exec(parsed.search)
+      const extension = '.' + (extensionMatch ? extensionMatch[1] : 'jpg')
+      let filename = parsed.href
         .replace(parsed.search, '')
-        .replace(/:\w*$/, '')
-        .concat(':orig');
+      if (!filename.endsWith(extension)) {
+        filename += extension
+      }
+      filename += ':orig';
+      return filename;
     } else if (url.includes('ton/data/dm')) {
       return url.replace(/:small$/, ':large');
     } else {
