@@ -1,6 +1,12 @@
 # 트윗덱 플레이어 ChangeLog
 http://github.com/sokcuri/TweetDeckPlayer/releases
 
+트윗덱 플레이어 v2.34.1-G19 ( 2019-07-18 )
+-----------------------------
+풀 리퀘스트를 보내주신 [c0ncon](https://github.com/c0ncon)님께 감사합니다!
+* 이미지를 저장할 때 확장자가 잘못되는 버그를 고쳤습니다.
+* 리트윗과 마음을 동시에 할 수 있는 기능을 추가했습니다. 트윗덱 플레이어 옵션의 "Enable Retweet and Favorite combo button" 옵션을 통해 활성화 할 수 있습니다.
+
 트윗덱 플레이어 v2.34.1-G18 ( 2019-07-05 )
 -----------------------------
 * Electron을 업데이트했습니다. (v5.0, Chromium v73)
