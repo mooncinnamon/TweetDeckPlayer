@@ -19,6 +19,7 @@ module.exports = {
     detectUpdate: true,
     disableParallelDownload: false,
     notifyFastRetweet: true,
+    enableRtAndFav: false,
   },
   data: {},
   load () {

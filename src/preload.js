@@ -37,6 +37,7 @@ const WikiLinkFixer = require('./preload_scripts/wikilinkfix');
 const CounterClear = require('./preload_scripts/counterclear');
 const UserNotes = require('./preload_scripts/user-note');
 const Bookmark = require('./preload_scripts/bookmark');
+const RTnFAV = require('./preload_scripts/rt-n-fav');
 
 // 설정 파일 읽기
 var config = Config.load();
@@ -473,6 +474,7 @@ if (isTweetdeck) {
     if (config.enableUnlinkis) {
       document.addEventListener('DOMContentLoaded', Unlinkis);
     }
+    document.addEventListener('DOMContentLoaded', RTnFAV);
   } else if (location.pathname === '/web/success.html') {
     // 트윗덱 계정추가 성공화면 (https://tweetdeck.twitter.com/web/success.html)
     //location.href='https://tweetdeck.twitter.com/web/success.html'
@@ -778,7 +780,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ipcRenderer.send('open-settings');
     });
   });
-
 });
 
 ipcRenderer.on('redirect-url', function (event, url) {
