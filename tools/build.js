@@ -75,7 +75,7 @@ const build = () => {
   console.log('--- Build Started ---');
 
   packager(packagerOptions, (err, appPaths) => {
-    if (!!err) {
+    if (err) {
       console.error(err);
       process.exit(1);
     } else {

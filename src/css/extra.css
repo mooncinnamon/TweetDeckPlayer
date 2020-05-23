@@ -13,53 +13,9 @@
   opacity: .8;
 }
 
-/*
- * 트윗덱 별표 관심글
- * 참고: https://github.com/eramdam/BetterTweetDeck/commit/364632d7f6cad654d29a0cd0293f93ee32ee59d5
- */
-
-.starry .icon-favorite:before {
-  content: '\f007';
-}
-
-.starry .icon-favorite-color,
-.starry .is-favorite .icon-favorite-toggle {
-  color: var(--star-color);
-}
-
-/* 별표 가리킬 때 색상 수정
- * 참고: https://github.com/eramdam/BetterTweetDeck/commit/262fc14878eccc165a0ae04a4ad67e0778f5bb1b
- */
-
-.starry .tweet-action:hover               .icon-favorite,
-.starry .tweet-detail-action:hover        .icon-favorite,
-.starry .dm-action:hover                  .icon-favorite,
-.starry .tweet-action:focus               .icon-favorite,
-.starry .tweet-detail-action:focus        .icon-favorite,
-.starry .dm-action:focus                  .icon-favorite,
-.starry .tweet-action:active              .icon-favorite,
-.starry .tweet-detail-action:active       .icon-favorite,
-.starry .dm-action:active                 .icon-favorite,
-.starry .tweet-action.is-selected         .icon-favorite,
-.starry .is-selected.tweet-detail-action  .icon-favorite,
-.starry .is-selected.dm-action            .icon-favorite {
-  color: var(--star-color) !important;
-}
-
-/*
- * https://github.com/eramdam/BetterTweetDeck/blob/master/src/css/features/stars.css
- */
-
-.starry .heart-anim {
-  visibility: hidden !important;
-}
-
-.starry .icon-favorite.is-invisible {
-  visibility: visible !important;
-}
-
 .tdp-square-profile .prf-img,
-.tdp-square-profile img.avatar {
+.tdp-square-profile img.avatar,
+html.dark .tdp-square-profile img.avatar {
   border-radius: 10%;
 }
 
@@ -118,6 +74,7 @@
 .tiv-btngroup-right {
   float: right;
 }
+html.dark .tiv-button,
 .tiv-button {
   display: inline-block;
   margin: 0 5px;
@@ -130,12 +87,19 @@
   font-size: 12pt;
   transition: background-color .2s;
 }
+html.dark .tiv-button:not(:disabled):hover,
 .tiv-button:not(:disabled):hover {
   background-color: #555;
 }
+html.dark .tiv-button:disabled,
 .tiv-button:disabled {
   opacity: .6;
+  background-color: #222;
   cursor: not-allowed;
+}
+html.dark .tiv-button:hover,
+.tiv-button:hover {
+  color: #eee;
 }
 
 /* 트윗 상태(리트윗, 마음) 표시 */
@@ -154,4 +118,45 @@ body.tdp-color-labels .js-tweet.tweet.is-retweet+.tdp-color-label {
 }
 body.tdp-color-labels .js-tweet.tweet.is-favorite.is-retweet+.tdp-color-label {
   background-color: #3b94d9;
+}
+
+/* 트윗 입력 글자수 표시 */
+.js-character-count.is-hidden,
+html.dark .js-character-count.is-hidden {
+  display: inline !important;
+}
+
+
+/*
+트윗 입력칸에서, word-wrap된 단어 있을 때
+한글 입력하면 줄바꿈 문자가 들어가는 버그 고침
+참고: https://github.com/gaeulbyul/TweetDeckPlayer/issues/2
+*/
+textarea.js-compose-text {
+  word-break: keep-all;
+}
+
+/* 사용자노트 기능 관련 */
+#user-note-app {
+  padding: 3px;
+  font-size: 12pt;
+  background-color: #e1e8ed;
+  color: #292f33;
+}
+html.dark #user-note-app {
+  background-color: #15202b;
+}
+html.dark .user-note-control {
+  color: #8899a6;
+}
+.user-note-area {
+  min-height: 80px;
+  max-height: 100px;
+}
+.user-note-control {
+  margin: 3px;
+  font-size: 10pt;
+}
+.user-note-loading.loaded {
+  display: none;
 }

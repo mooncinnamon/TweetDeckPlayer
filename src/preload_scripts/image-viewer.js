@@ -6,15 +6,15 @@ const config = Config.load();
 const VIEWER_HTML = `
   <nav class="tiv-toolbar">
     <div class="tiv-btngroup-left">
-      <button class="tiv-button tiv-btn-prev">
+      <button class="btn tiv-button tiv-btn-prev">
         Previous
       </button>
-      <button class="tiv-button tiv-btn-next">
+      <button class="btn tiv-button tiv-btn-next">
         Next
       </button>
     </div>
     <div class="tiv-btngroup-right">
-      <button class="tiv-button tiv-btn-close">
+      <button class="btn tiv-button tiv-btn-close">
         Close
       </button>
     </div>
@@ -47,10 +47,10 @@ class TDPImageViewer {
         this.close();
       }
     });
-    image.addEventListener('load', event => {
+    image.addEventListener('load', () => {
       image.classList.remove('loading');
     });
-    image.addEventListener('click', event => {
+    image.addEventListener('click', () => {
       config.tivClickForNextImage && this.circleNext();
     });
     toolbar.querySelector('.tiv-btn-prev').addEventListener('click', event => {
@@ -62,6 +62,7 @@ class TDPImageViewer {
       this.next();
     });
     toolbar.querySelector('.tiv-btn-close').addEventListener('click', event => {
+      event.preventDefault();
       this.close();
     });
     document.body.appendChild(viewer);
@@ -122,13 +123,12 @@ module.exports = function imageViewer () {
       viewer.update();
       viewer.show();
       // Image preload
-      parameter.images.map(img => {
+      parameter.images.forEach(img => {
         const i = new Image;
         i.src = img.url;
-        return i;
       });
     })
-    .on('tiv-close', event => {
+    .on('tiv-close', () => {
       viewer.close();
     })
     .on('keydown', event_ => {
@@ -163,6 +163,26 @@ module.exports = function imageViewer () {
         }
       }
     });
+  $(document.body).on('mouseover', 'a[rel=mediaPreview]', event => {
+    if (!config.altImageViewer) return;
+    const target = $(event.currentTarget);
+    const container = target.parents('.js-media');
+    const images = container.find('a[rel=mediaPreview]');
+    images.each((_, image) => {
+      const $image = $(image);
+      const mediaImg = $image.find('img.media-img');
+      let origUrl = null;
+      if (mediaImg.length > 0) {
+        origUrl = Util.getOrigPath(mediaImg.attr('src'));
+      } else {
+        origUrl = Util.getOrigPath(extractURL($image));
+      }
+      if (origUrl) {
+        const i = new Image;
+        i.src = origUrl;
+      }
+    });
+  });
   $(document.body).on('click', 'a[rel=mediaPreview]', event => {
     if (!config.altImageViewer) return;
     const target = $(event.currentTarget);
@@ -180,6 +200,7 @@ module.exports = function imageViewer () {
     images.each((index, image) => {
       image = $(image);
       const img = image.find('img.media-img');
+      let url;
       if (img.length !== 0) {
         url = img.attr('src');
       } else {

@@ -1,35 +1,43 @@
-const {remote, clipboard, ipcRenderer, shell} = require('electron');
+/* globals TD */
+const {remote, clipboard, ipcRenderer} = require('electron');
 // Guard against missing remote function properties
 // https://github.com/electron/electron/pull/7209
-try {
-  const {Menu, MenuItem, dialog} = remote;
-} catch (e) {
-  console.warn('remote error : ' + e);
-};
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const twitter = require('twitter-text');
-const twemoji = require('twemoji');
 
 const Config = require('./config');
 const VERSION = require('./version').message;
 const Util = require('./util');
 
-const PlayerMonkey = require('./preload_scripts/playermonkey');
+const isTweetdeck = location.hostname === 'tweetdeck.twitter.com';
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!isTweetdeck) {
+    return;
+  }
+  const ModuleRaid = require('moduleraid');
+  const moduleRaid = ModuleRaid();
+  const jq = moduleRaid.findFunction('jQuery JavaScript');
+  if (jq.length === 0) {
+    throw new Error('Fatal: jQuery not found!');
+  }
+  window.$ = window.jQuery = jq[0];
+});
+
 const WordFilter = require('./preload_scripts/wordfilter');
 const Unlinkis = require('./preload_scripts/unlinkis');
 const CBPaste = require('./preload_scripts/clipboard-paste');
 const TwtLib = require('./preload_scripts/twtlib');
 const AutoSaveFav = require('./preload_scripts/autosave-favorites');
-const EmojiPad = require('./preload_scripts/emojipad');
 const QuoteWithoutNotification = require('./preload_scripts/quote-without-notification');
-const GifAutoplay = require('./preload_scripts/gif-autoplay');
 const ImageViewer = require('./preload_scripts/image-viewer');
 const SwitchAccount = require('./preload_scripts/switch-account');
 const WikiLinkFixer = require('./preload_scripts/wikilinkfix');
 const CounterClear = require('./preload_scripts/counterclear');
-const UserNotes = require('./preload_scripts/user-note.js');
+const UserNotes = require('./preload_scripts/user-note');
+const Bookmark = require('./preload_scripts/bookmark');
+const RTnFAV = require('./preload_scripts/rt-n-fav');
 
 // 설정 파일 읽기
 var config = Config.load();
@@ -67,7 +75,7 @@ var autoReload = () => {
         autoReload_alermed++;
         break;
       }
-      
+
       setTimeout(autoReload, 60000);
       return;
 
@@ -88,9 +96,9 @@ var autoReload = () => {
 };
 autoReload();
 
-const loadBlackBird = (callback) => {
+const loadBlackBird = callback => {
   var oReq = new XMLHttpRequest();
-  oReq.addEventListener("load", function () {
+  oReq.addEventListener('load', function () {
     const res = JSON.parse(this.responseText);
     if (res.client && res.client.settings && res.client.settings) {
       const tdp_settings = res.client.settings.settings.TDPSettings || {};
@@ -99,7 +107,7 @@ const loadBlackBird = (callback) => {
   });
   oReq.addEventListener('error', function () {
     callback({error: true});
-  })
+  });
   oReq.open('GET', 'https://api.twitter.com/1.1/tweetdeck/clients/blackbird/all');
   oReq.withCredentials = true;
   oReq.setRequestHeader('Content-Type', 'application/json');
@@ -107,31 +115,10 @@ const loadBlackBird = (callback) => {
   oReq.setRequestHeader('x-csrf-token', TD.util.getCsrfTokenHeader());
   //oReq.setRequestHeader('User-Agent', TD.util.getTweetDeckUserAgentString());
   oReq.send();
-}
-
-const saveBlackBird = (callback, params) => {
-  var oReq = new XMLHttpRequest();
-  oReq.addEventListener("load", function () {
-    const res = JSON.parse(this.responseText);
-    if (res.client && res.client.settings && res.client.settings) {
-      const tdp_settings = res.client.settings.settings.TDPSettings || {};
-      callback(tdp_settings);
-    }
-  });
-  oReq.addEventListener('error', function () {
-    callback({error: true});
-  })
-  oReq.open('POST', 'https://api.twitter.com/1.1/tweetdeck/clients/blackbird');
-  oReq.withCredentials = true;
-  oReq.setRequestHeader('Content-Type', 'application/json');
-  oReq.setRequestHeader('Authorization', 'Bearer ' + TD.config.bearer_token);
-  oReq.setRequestHeader('x-csrf-token', TD.util.getCsrfTokenHeader());
-  //oReq.setRequestHeader('User-Agent', TD.util.getTweetDeckUserAgentString());
-  oReq.send(JSON.stringify(params));
-}
+};
 
 ipcRenderer.on('cloud-load-config', (event, uuid) => {
-  loadBlackBird((TDPSettings) => {
+  loadBlackBird(TDPSettings => {
     if (TDPSettings.saved_timestamp) {
       event.sender.send(uuid, JSON.stringify(TDPSettings));
       return;
@@ -140,34 +127,15 @@ ipcRenderer.on('cloud-load-config', (event, uuid) => {
     return;
   });
 });
-/*
-ipcRenderer.on('cloud-save-config', (event, uuid, title) => {
-  const config = Config.load();
-  config.saved_timestamp = new Date();
-  config.saved_title = title || '';
-  if (config.bounds)
-    delete config.bounds;
-  let blackbird_acc = TD.storage.clientController.getAll()[0];
-  blackbird_acc.settings.settings.TDPSettings = config;
-  saveBlackBird(() => {
-    loadBlackBird((TDPSettings) => {
-      if (TDPSettings.saved_timestamp) {
-        event.sender.send(uuid, JSON.stringify(TDPSettings));
-        return;
-      }
-      event.sender.send(uuid, false);
-      return;
-    });
-  }, blackbird_acc);
-});
-*/
+
 
 ipcRenderer.on('cloud-save-config', (event, uuid, title) => {
   const config = Config.load();
   config.saved_timestamp = new Date();
   config.saved_title = title || '';
-  if (config.bounds)
+  if (config.bounds) {
     delete config.bounds;
+  }
   if (TD && TD.settings) {
     TD.settings.set('TDPSettings', config);
   }
@@ -179,8 +147,9 @@ ipcRenderer.on('cloud-remove-config', (event, uuid, title) => {
   const config = Config.load();
   config.saved_timestamp = new Date();
   config.saved_title = title || '';
-  if (config.bounds)
+  if (config.bounds) {
     delete config.bounds;
+  }
   if (TD && TD.settings) {
     TD.settings.set('TDPSettings', undefined);
   }
@@ -188,10 +157,11 @@ ipcRenderer.on('cloud-remove-config', (event, uuid, title) => {
   event.sender.send(uuid, true);
 });
 
-ipcRenderer.on('apply-config', event => {
+ipcRenderer.on('apply-config', () => {
   var style = '';
+  let customFonts = '';
   try {
-    var { detectFont, supportedFonts } = require('detect-font');
+    var { supportedFonts } = require('detect-font');
     config = Config.load();
     window.config = config;
 
@@ -211,24 +181,12 @@ ipcRenderer.on('apply-config', event => {
       if (notSupported.length !== 0) {
         console.warn(`Not Supported Font(s): ${notSupported.join(', ')}`);
       }
-      style = `font-family: ${sf.join(',')} !important;`;
+      customFonts = `font-family: ${sf.join(',')} !important;`;
 
       node.remove();
-    } else {
-      style = '';
     }
-
-    // Mention/Hashtag/URL Color
-    document.body.querySelector('.js-app.application').style = `--mention-color: ${Config.data.twColorMention};--hashtag-color: ${Config.data.twColorHashtag};--url-color: ${Config.data.twColorURL}`;
 
     const cl = document.body.classList;
-    if (config.useStarForFavorite) {
-      cl.remove('hearty');
-      cl.add('starry');
-    } else {
-      cl.remove('starry');
-      cl.add('hearty');
-    }
     cl.toggle('tdp-square-profile', config.useSquareProfileImage);
     if (config.applyCustomizeSlider && !cl.contains('customize-columns')) {
       cl.add('customize-columns');
@@ -257,35 +215,33 @@ ipcRenderer.on('apply-config', event => {
     if (tdp_customFontStyle === null) {
       tdp_customFontStyle = document.createElement('style');
       tdp_customFontStyle.id = 'TDP_customFontStyle';
-      document.body.appendChild(tdp_customFontStyle)
+      document.body.appendChild(tdp_customFontStyle);
     }
 
     tdp_customFontStyle.innerText = `
       html, body, .os-windows, .is-inverted-dark,
       .tweet-text,
+      html.dark button,
+      textarea.js-compose-text,
+      .user-note-area, /* 사용자노트 */
       .column {
         font-size: ${fontsize} !important;
-        line-height: initial;
+        ${customFonts}
+      }
+      .tdp-custom-fonts {
+        ${customFonts}
       }
     `;
 
     // Notification Alarm sound
     if (updateSound_backup === undefined) {
-      updateSound_backup = document.getElementById("update-sound").innerHTML;
+      updateSound_backup = document.getElementById('update-sound').innerHTML;
     }
 
     if (config.applyNotiAlarmSound) {
       var base64_encode = file => {
         var bitmap = fs.readFileSync(file);
         return new Buffer(bitmap).toString('base64');
-      };
-
-      var base64_decode = (base64str, file) => {
-        // create buffer object from base64 encoded string, it is important to tell the constructor that the string is base64 encoded
-        var bitmap = new Buffer(base64str, 'base64');
-        // write buffer to file
-        fs.writeFileSync(file, bitmap);
-        console.log('******** File created from base64 encoded string ********');
       };
 
       var convertDataURIToBinary = dataURI => {
@@ -309,13 +265,13 @@ ipcRenderer.on('apply-config', event => {
       var blob = new Blob([binary], {type : `audio/${ext}`});
       var blobUrl = URL.createObjectURL(blob);
 
-      document.getElementById("update-sound").innerHTML = `<source src="${blobUrl}">`;
-      document.getElementById("update-sound").pause();
-      document.getElementById("update-sound").load();
+      document.getElementById('update-sound').innerHTML = `<source src="${blobUrl}">`;
+      document.getElementById('update-sound').pause();
+      document.getElementById('update-sound').load();
     } else {
-      document.getElementById("update-sound").innerHTML = updateSound_backup;
-      document.getElementById("update-sound").pause();
-      document.getElementById("update-sound").load();
+      document.getElementById('update-sound').innerHTML = updateSound_backup;
+      document.getElementById('update-sound').pause();
+      document.getElementById('update-sound').load();
     }
   } catch (e) {
     console.warn(e);
@@ -358,7 +314,7 @@ ipcRenderer.on('command', (event, cmd) => {
     case 'selectall':
       document.execCommand('selectall');
       break;
-    case 'copyimage':
+    case 'copyimage': {
       window.toastMessage('Image downloading..');
       const nativeImage = require('electron').nativeImage;
       var request = require('request').defaults({ encoding: null });
@@ -368,7 +324,7 @@ ipcRenderer.on('command', (event, cmd) => {
           window.toastMessage('Image copied to clipboard');
         }
       });
-      break;
+    } break;
     case 'copyimageurl':
       href = Util.getOrigPath(Addr.img);
       clipboard.writeText(href);
@@ -437,9 +393,6 @@ window.addEventListener('contextmenu', e => {
   // 현재 활성화된 element
   var el = document.activeElement;
 
-  // 현재 마우스가 가리키고 있는 elements
-  var hover = document.querySelectorAll(':hover');
-
   // 선택 영역이 있는지 여부
   var is_range = document.getSelection().type === 'Range';
 
@@ -483,7 +436,7 @@ window.addEventListener('contextmenu', e => {
     const hoveredTweet = document.querySelector('article.stream-item:hover');
     const tweetText = hoveredTweet.querySelector('.js-tweet-text');
     const tweetId = hoveredTweet.getAttribute('data-tweet-id');
-    function getTextOrEmoji (node) {
+    const getTextOrEmoji = node => {
       if (node.nodeType === HTMLElement.TEXT_NODE) {
         return node.textContent;
       } else if (node.nodeType === HTMLElement.ELEMENT_NODE && node.classList.contains('emoji')) {
@@ -491,7 +444,7 @@ window.addEventListener('contextmenu', e => {
       } else {
         return '';
       }
-    }
+    };
     const textWithEmoji = Array
       .from(tweetText ? tweetText.childNodes : [])
       .map(getTextOrEmoji)
@@ -507,25 +460,50 @@ window.addEventListener('contextmenu', e => {
   ipcRenderer.send('context-menu', target, is_range, Addr);
 }, false);
 
-document.addEventListener('DOMContentLoaded', WordFilter);
-document.addEventListener('DOMContentLoaded', CBPaste);
-document.addEventListener('DOMContentLoaded', TwtLib);
-document.addEventListener('DOMContentLoaded', GifAutoplay);
-document.addEventListener('DOMContentLoaded', ImageViewer);
-document.addEventListener('DOMContentLoaded', SwitchAccount);
-document.addEventListener('DOMContentLoaded', WikiLinkFixer);
-document.addEventListener('DOMContentLoaded', CounterClear);
-document.addEventListener('DOMContentLoaded', UserNotes);
-
-
-if (config.enableUnlinkis) {
-  document.addEventListener('DOMContentLoaded', Unlinkis);
+if (isTweetdeck) {
+  if (location.pathname === '/') {
+    document.addEventListener('DOMContentLoaded', WordFilter);
+    document.addEventListener('DOMContentLoaded', CBPaste);
+    document.addEventListener('DOMContentLoaded', TwtLib);
+    document.addEventListener('DOMContentLoaded', ImageViewer);
+    document.addEventListener('DOMContentLoaded', SwitchAccount);
+    document.addEventListener('DOMContentLoaded', WikiLinkFixer);
+    document.addEventListener('DOMContentLoaded', CounterClear);
+    document.addEventListener('DOMContentLoaded', UserNotes);
+    document.addEventListener('DOMContentLoaded', Bookmark);
+    if (config.enableUnlinkis) {
+      document.addEventListener('DOMContentLoaded', Unlinkis);
+    }
+    document.addEventListener('DOMContentLoaded', RTnFAV);
+  } else if (location.pathname === '/web/success.html') {
+    // 트윗덱 계정추가 성공화면 (https://tweetdeck.twitter.com/web/success.html)
+    //location.href='https://tweetdeck.twitter.com/web/success.html'
+    document.addEventListener('DOMContentLoaded', () => {
+      const msgs = [
+        '잠시 후에 추가된 계정이 나타납니다. 이 창은 닫으셔도 좋습니다. - TweetDeck Player',
+        '(만약 나타나지 않는다면 트윗덱 플레이어를 재실행해보시기 바랍니다.)',
+      ];
+      msgs.forEach(msg => {
+        const elem = document.createElement('p');
+        Object.assign(elem.style, {
+          fontSize: '16pt',
+          fontWeight: 'bold',
+          backgroundColor: 'white',
+          color: 'black',
+        });
+        elem.textContent = msg;
+        document.body.appendChild(elem);
+      });
+      window.setTimeout(() => {
+        window.close();
+      }, 1000 * 15);
+    });
+  }
 }
 
 // 트윗에 첨부된 이미지를 드래그해서 저장할 수 있도록 함
 document.addEventListener('dragstart', evt => {
   var imageSrc = '';
-  var imageOrgSrc = '';
 
   if (evt.srcElement.classList.contains('js-media-image-link')) {
     // 트윗 미디어 이미지
@@ -537,7 +515,6 @@ document.addEventListener('dragstart', evt => {
 
   // 이미지인 경우
   if (imageSrc) {
-    imageOrgSrc = imageSrc;
     var image = Util.getOrigPath(imageSrc);
     var ext = image.substr(image.lastIndexOf('.') + 1);
     var filename = image.substr(image.lastIndexOf('/') + 1);
@@ -550,39 +527,53 @@ document.addEventListener('dragstart', evt => {
   }
 }, false);
 
+async function initEmojiPad () {
+  const EmojiPad = require('./preload_scripts/emojipad');
+  document.body.appendChild(EmojiPad.element);
+  const sleep = n => new Promise(resolve => window.setTimeout(resolve, n));
+  let dockBtn;
+  while (!dockBtn) {
+    await sleep(1000);
+    dockBtn = document.querySelector('.emojipad--entry-point');
+  }
+  console.debug('emojipad: entry-point found!');
+  document.body.addEventListener('click', e => {
+    if (event.target.matches('.emojipad--entry-point')) {
+      EmojiPad.show(e.clientX, e.clientY);
+      var el = EmojiPad.element;
+      var rect = el.getClientRects()[0];
+      if (window.innerWidth - rect.left - 10 < rect.width) {
+        el.style.left = `${window.innerWidth - rect.width - 10}px`;
+      }
+      if (window.innerHeight - rect.top - 10 < rect.height) {
+        el.style.top = `${window.innerHeight - rect.height - 10}px`;
+      }
+    } else if (e.target !== dockBtn && EmojiPad.isOpen) {
+      EmojiPad.hide();
+    }
+  });
+  EmojiPad.onEmojiClick = chr => {
+    var txt = document.getElementById('docked-textarea');
+    txt.value += chr;
+    var evt = document.createEvent('HTMLEvents');
+    evt.initEvent('change', false, true);
+    txt.dispatchEvent(evt);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (!isTweetdeck) {
+    return;
+  }
   const TD = window.TD;
   const $ = window.$;
-
-  window.Webhack = webpack => {
-    webpack([], {
-      webhack (_module, _exports, _require) {
-        const modules = _require.c;
-        // `modules`는 (key가 숫자임에도) 배열이 아닌 JS 오브젝트이며, 직접 iterate할 수 없다.
-        // 따라서 Object.keys로 key의 배열을 구하고 이걸 iterate한다.
-        const keys = Object.keys(modules);
-        _module.exports = {
-          _require,
-          extractModuleByMethodName (name) {
-            let result = null;
-            for (const key of keys) {
-              const mod = modules[key].exports;
-              if (typeof mod === 'object' && typeof mod[name] === 'function') {
-                result = mod;
-                break;
-              }
-            }
-            return result;
-          },
-        };
-      },
-    });
-    return webpack([], [], ['webhack']);
-  };
-  const webhack = window.Webhack(window.webpackJsonp);
-  const toaster = webhack.extractModuleByMethodName('showNotification');
-  if (!toaster) {
+  let toaster;
+  try {
+    toaster = window.findFunction('showNotification')[0];
+  } catch (e) {
     console.warn('Warning!, failed to load "toaster" module.');
+    console.warn('Error: ', e);
+    toaster = null;
   }
   window.toastMessage = message => {
     if (!toaster) return;
@@ -592,29 +583,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!toaster) return;
     toaster.showErrorNotification({ message });
   };
-
-  function patchContentEditable () {
-    $('[contenteditable="true"]').css({
-      opacity: 0,
-      pointerEvents: 'none',
-    });
-  }
   if (window.TD_mustaches) {
     // version
     window.TD_mustaches['version.mustache'] = `${VERSION} (TweetDeck {{version}}{{#buildIDShort}}-{{buildIDShort}}{{/buildIDShort}})`;
 
     // set min_width to modal context
-    window.TD_mustaches['modal/modal_context.mustache'] = window.TD_mustaches['modal/modal_context.mustache'].replace('<div class="js-modal-context', '<div style="min-width: 560px;" class="js-modal-context');
-    window.TD_mustaches['app_container.mustache'] = window.TD_mustaches['app_container.mustache'].replace('<div id="open-modal', '<div style="min-width: 650px;" id="open-modal');
+    window.TD_mustaches['modal/modal_context.mustache'] = window.TD_mustaches['modal/modal_context.mustache']
+      .replace('<div class="js-modal-context', '<div style="min-width: 560px;" class="js-modal-context');
+    window.TD_mustaches['app_container.mustache'] = window.TD_mustaches['app_container.mustache']
+      .replace('<div id="open-modal', '<div style="min-width: 650px;" id="open-modal');
 
     // create emojipad entry point
-    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache'].replace('<div class="js-send-button-container', '<div class="btn btn-on-blue padding-v--9 emojipad--entry-point"><img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;"></div> <div class="js-send-button-container').replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
+    const emojiButton = `
+      <button class="btn btn-on-blue padding-v--6 emojipad--entry-point">
+        <img class="emoji" src="https://twemoji.maxcdn.com/2/72x72/1f600.png" style="pointer-events:none;">
+      </button>
+    `;
+    window.TD_mustaches['compose/docked_compose.mustache'] = window.TD_mustaches['compose/docked_compose.mustache']
+      .replace('<div class="js-send-button-container', `${emojiButton} <div class="js-send-button-container`)
+      .replace('<textarea class="js-compose-text', '<textarea id="docked-textarea" class="js-compose-text');
 
     // inject tdp settings menu
-    window.TD_mustaches['menus/topbar_menu.mustache'] = window.TD_mustaches['menus/topbar_menu.mustache'].replace('Settings{{/i}}</a> </li>', 'Settings{{/i}}</a> </li> <li class="is-selectable"><a href="#" data-action="tdpSettings">{{_i}}TweetDeck Player Settings{{/i}}</a></li>');
+    const tdpSettingsItem = `
+      <li class="is-selectable">
+        <a href="#" data-action="tdpSettings">{{_i}}TweetDeck Player Settings{{/i}}</a>
+      </li>
+    `;
+    window.TD_mustaches['menus/topbar_menu.mustache'] = window.TD_mustaches['menus/topbar_menu.mustache']
+      .replace('Settings{{/i}}</a> </li>', `Settings{{/i}}</a> </li> ${tdpSettingsItem}`);
 
     // inject tweet indicator label
-    window.TD_mustaches['status/tweet_single.mustache'] = window.TD_mustaches['status/tweet_single.mustache'].replace(/<\/div>$/, '</div><div class="tdp-color-label"></div>');
+    window.TD_mustaches['status/tweet_single.mustache'] = window.TD_mustaches['status/tweet_single.mustache']
+      .replace(/<\/div>$/, '</div><div class="tdp-color-label"></div>');
   }
 
   if (document.title === 'TweetDeck') {
@@ -629,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (evt.target.id === 'account-safeguard-checkbox' || evt.target.id === 'inline-account-safeguard-checkbox') {
       var el = $('.js-compose-text');
       for (var i = 0; i < el.length; i++) {
-        var text = $(el[i]).val();
 
         // 마지막 멘션 아이디가 셀렉션 지정되는 버그 회피
         var x = el[i];
@@ -668,14 +667,29 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       e.stopPropagation();
       $(document.activeElement).trigger($.Event('keypress', {which: e.which}));
-    } 
+    }
   });
 
-  $(document).on('mouseover', '.tweet-timestamp', e => {
+  $(document).on('mouseenter', '.tweet-timestamp:not([title])', e => {
     const target = e.currentTarget;
     const time = target.getAttribute('data-time');
+    if (!time) {
+      return
+    }
     const date = new Date(parseInt(time, 10));
     target.setAttribute('title', date.toLocaleString());
+  });
+
+  $(document).on('mouseenter', '.account-inline:not([title])', event => {
+    const target = event.currentTarget;
+    const nicknameElem = target.querySelector('.fullname');
+    if (!nicknameElem) {
+      return;
+    }
+    const nickname = nicknameElem.textContent;
+    // username already contains @-prefix
+    const username = target.querySelector('.username').textContent;
+    target.setAttribute('title', `${nickname} (${username})`);
   });
 
   // Minimize Scroll Animation for Tweet Selection
@@ -710,144 +724,62 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', setKeyCheck);
 
   // Favorite to Image Save
-  var processFavorite = TD.services.TwitterClient.prototype.favorite.toString().substr(17);
-  processFavorite = processFavorite.substr(0, processFavorite.length - 1);
-
-  window.AutoSaveFav = AutoSaveFav;
-  processFavorite = 'AutoSaveFav(e);' + processFavorite;
-  TD.services.TwitterClient.prototype.favorite = Function('e,t,i', processFavorite);
+  const originalFavorite = TD.services.TwitterClient.prototype.favorite;
+  TD.services.TwitterClient.prototype.favorite = function (e, t, i) {
+    AutoSaveFav(e);
+    return originalFavorite.call(this, e, t, i);
+  };
 
   // Fast Retweet
-  TD.services.TwitterStatus.prototype.retweet_direct = function (e) {
+  TD.services.TwitterStatus.prototype.retweet$REAL = TD.services.TwitterStatus.prototype.retweet;
+  TD.services.TwitterStatus.prototype.retweet = function () {
     if (config.enableFastRetweet && !keyState.shift) {
-      var t, i, s, n;
-      var r = this.isRetweeted;
-      var o = TD.controller.clients.getClient(this.account.getKey());
-      this.setRetweeted(!this.isRetweeted);
-      this.animateRetweet(e.element);
-      var n = function (e) {
-      };
-      var s = function (e) {
-        var t = TD.core.defer.fail();
-        if (403 === e.status || 404 === e.status) {
-          window.toastErrorMessage((r ? TD.i('Failed: Unretweet -') : TD.i('Failed: Retweet -')) + ' ' + JSON.parse(e.responseText).errors[0].message);
+      const currentAccount = this.account;
+      const retweeterNickName = currentAccount.state.name;
+      const retweeterUserName = currentAccount.state.username;
+      const retweeter = `${retweeterNickName}(@${retweeterUserName})`;
+      const currentAccountKey = currentAccount.privateState.key;
+      if (this.isRetweeted) {
+        $(document).trigger('uiUndoRetweet', {
+          tweetId: this.getMainTweet().id,
+          from: [ currentAccountKey ],
+        });
+        this.setRetweeted(false);
+        if (config.notifyFastRetweet) {
+          window.toastMessage(`${retweeter}로 리트윗을 취소했습니다.`);
         }
-        403 !== e.status && 404 !== e.status || (t = this.refreshRetweet(o)),
-        t.addErrback(function () {
-          this.setRetweeted(r),
-          n(e);
+      } else {
+        $(document).trigger('uiRetweet', {
+          id: this.id,
+          from: [ currentAccountKey ],
+        });
+        this.setRetweeted(true);
+        if (config.notifyFastRetweet) {
+          window.toastMessage(`${retweeter}로 리트윗했습니다.`);
         }
-        .bind(this));
       }
-      .bind(this);
-      var i = function (e) {
-        e.error && s();
-      };
-      r ? (o.unretweet(this.id, i, s),
-      t = () => {}) : (o.retweet(this.id, i, s),
-      t = TD.controller.stats.retweet),
-      t(this.getScribeItemData(), this.account.getUserID());
+      return;
     } else {
-      var e = 1 === TD.storage.accountController.getAccountsForService('twitter').length;
-      this.isRetweeted && e ? (this.setRetweeted(!1),
-      $(document).trigger('uiUndoRetweet', {
-        tweetId: this.getMainTweet().id,
-        from: this.account.getKey(),
-      })) : new TD.components.ActionDialog(this);
+      return TD.services.TwitterStatus.prototype.retweet$REAL.call(this);
     }
   };
-  TD.services.TwitterStatus.prototype.refreshRetweet = function (e) {
-    var t = new TD.core.defer.Deferred;
-    return e.show(this.id, t.callback.bind(t), t.errback.bind(t)),
-    t.addCallback(function (e) {
-      this.setRetweeted(e.isRetweeted);
-    }
-    .bind(this)),
-    t;
-  };
-  TD.services.TwitterStatus.prototype.animateRetweet = function (e) {
-    var t = 'anim anim-slower anim-bounce-in';
-    window.requestAnimationFrame(function () {
-      e.find('a[rel="retweet"]').toggleClass(t, this.isRetweeted);
-    }
-    .bind(this));
-  };
-  TD.services.TwitterClient.prototype.retweet = function (e, t, i) {
-    var s = this;
-    var n = function (e) {
-      t(e);
-    };
-    this.makeTwitterCall(this.API_BASE_URL + 'statuses/retweet/' + e + '.json', {
-      id: e,
-    }, 'POST', this.processTweet, n, i);
-  };
-  TD.services.TwitterClient.prototype.unretweet = function (e, t, i) {
-    var s = this;
-    var n = function (e) {
-      t(e);
-    };
-    this.makeTwitterCall(this.API_BASE_URL + 'statuses/unretweet/' + e + '.json', {
-      id: e,
-    }, 'POST', this.processTweet, n, i);
-  };
-  TD.services.TwitterStatus.prototype.retweet_old = TD.services.TwitterStatus.prototype.retweet;
-  TD.services.TwitterStatus.prototype.retweet = TD.services.TwitterStatus.prototype.retweet_direct;
   // TweetDeck Ready Check
   $(document).on('TD.ready', () => {
     ipcRenderer.send('page-ready-tdp', this);
-        
+    // 2019-03-09 gaeulbyul:
+    // TD.ready 이벤트에도 emoji entry-point 버튼을 사용할 수가 없다. (lazy loading 같은 걸로 추정)
+    // 따라서, setTimeout을 통해 버튼을 사용할 수 있을때까지 기다린 후 작동하는 함수를 별도로 구현함
+    initEmojiPad();
     if (!Config.data.detectUpdate) window.toastMessage(TD.i(VERSION));
     setTimeout(() => {
       TD.settings.setUseStream(TD.settings.getUseStream());
-      patchContentEditable();
     }, 3000);
-    if (config.useStarForFavorite) {
-      const cl = document.body.classList;
-      cl.remove('hearty');
-      cl.add('starry');
-    }
-
-    // Enable emojipad
-    var emojiPadCSS = document.createElement('link');
-    var dockBtn = document.querySelector('.emojipad--entry-point');
-    document.body.appendChild(EmojiPad.element);
-    dockBtn.addEventListener('click', e => {
-      EmojiPad.show(e.clientX, e.clientY);
-
-      var el = EmojiPad.element;
-      var rect = el.getClientRects()[0];
-
-      if (window.innerWidth - rect.left - 10 < rect.width) {
-        el.style.left = `${window.innerWidth - rect.width - 10}px`;
-      }
-      if (window.innerHeight - rect.top - 10 < rect.height) {
-        el.style.top = `${window.innerHeight - rect.height - 10}px`;
-      }
-    });
-    document.body.addEventListener('click', e => {
-      if (e.target !== dockBtn && EmojiPad.isOpen) EmojiPad.hide();
-    }, false);
-    EmojiPad.onEmojiClick = chr => {
-      var txt = document.getElementById('docked-textarea');
-      txt.value += chr;
-      var evt = document.createEvent('HTMLEvents');
-      evt.initEvent('change', false, true);
-      txt.dispatchEvent(evt);
-    };
-
     // Integrate TDP settings
-    {
-      var f = TD.controller.stats.navbarSettingsClick.bind({});
-      TD.controller.stats.navbarSettingsClick = () => {
-        var btn = document.querySelector('a[data-action=tdpSettings]');
-        btn.addEventListener('click', e => {
-          ipcRenderer.send('open-settings');
-        }, false);
-        f();
-      };
-    }
+    $(document.body).on('click', 'a[data-action="tdpSettings"]', event => {
+      event.preventDefault();
+      ipcRenderer.send('open-settings');
+    });
   });
-
 });
 
 ipcRenderer.on('redirect-url', function (event, url) {

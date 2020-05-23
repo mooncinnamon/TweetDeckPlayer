@@ -1,30 +1,32 @@
 const electron = require('electron');
-const {app, BrowserWindow, dialog, session, Menu, MenuItem, ipcMain, shell} = electron;
+const {app, BrowserWindow, dialog, session, Menu, ipcMain, shell} = electron;
 const fs = require('fs');
 const mzFS = require('mz/fs');
 const path = require('path');
+const mime = require('mime');
 const mkdirp = require('mkdirp');
 const request = require('request');
 const child_process = require('child_process');
+const URL = require('url');
 const Util = require('./util');
-const VERSION = require('./version');
-const updateCheck = require('./update-check');
-
-// set to userdata folder
-app.setPath('userData', Util.getUserDataPath());
 
 // 설정
 const Config = require('./config');
 
+// set to userdata folder
+app.setPath('userData', Util.getUserDataPath());
+
+app.commandLine.appendSwitch('force-color-profile', 'srgb')
+
 const createUUIDv4 = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
-}
+};
 
-let win, popup, settingsWin, twtlibWin, accessibilityWin, gTranslatorWin;
-ipcMain.on('load-config', (event, arg) => {
+let win, settingsWin, twtlibWin, gTranslatorWin;
+ipcMain.on('load-config', event => {
   event.returnValue = Config.load();
 });
 
@@ -33,21 +35,25 @@ ipcMain.on('save-config', (event, config) => {
   Config.save();
 });
 
-ipcMain.on('apply-config', (event, config) => {
+ipcMain.on('apply-config', () => {
   try {
     win.webContents.send('apply-config');
-  } catch (e) { }
+  } catch (e) {
+    console.error(e);
+  }
 });
 
-ipcMain.on('cloud-load-config', (event, title) => {
+ipcMain.on('cloud-load-config', event => {
   let uuid = createUUIDv4();
   try {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-load-config', uuid);
+    win.webContents.send('cloud-load-config', uuid);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
@@ -59,9 +65,11 @@ ipcMain.on('cloud-save-config', (event, title) => {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-save-config', uuid, title);
+    win.webContents.send('cloud-save-config', uuid, title);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
@@ -73,9 +81,11 @@ ipcMain.on('cloud-remove-config', (event, title) => {
     ipcMain.once(uuid, (e, p) => {
       event.returnValue = p;
     });
-    const r = win.webContents.send('cloud-remove-config', uuid, title);
+    win.webContents.send('cloud-remove-config', uuid, title);
     return;
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   ipcMain.removeAllListeners(uuid);
   event.returnValue = null;
   return;
@@ -83,12 +93,18 @@ ipcMain.on('cloud-remove-config', (event, title) => {
 
 ipcMain.on('request-theme', event => {
   try {
-    const script = '(()=>{var x=document.querySelector("meta[http-equiv=Default-Style]");return x&&x.content||"light";})()';
-    win.webContents.executeJavaScript(script, false, (theme) => event.returnValue = theme);
-  } catch (e) { }
+    const script = `(() => {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    })()`;
+    win.webContents.executeJavaScript(script, false, theme => {
+      event.returnValue = theme;
+    });
+  } catch (e) {
+    event.returnValue = 'light';
+  }
 });
 
-ipcMain.on('open-settings', event => {
+ipcMain.on('open-settings', () => {
   openSetting(win);
 });
 
@@ -103,24 +119,25 @@ global.keyState.alt = false;
 Config.load();
 
 // 프로그램의 중복실행 방지
-var existInst = app.makeSingleInstance((commandLine, workingDirectory) => {
-  // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
-  if (win) {
-    win.show();
-    win.focus();
-  }
-});
-
+var existInst = app.requestSingleInstanceLock();
 // 인스턴스가 존재하는 경우 프로그램 종료
-if (existInst) {
+if (!existInst) {
   app.quit();
+} else {
+  app.on('second-instance', () => {
+    // 새로운 인스턴스가 실행되었을 때 기존 프로그램의 작동
+    if (win) {
+      win.show();
+      win.focus();
+    }
+  });
 }
 
 // 렌더러 프로세스가 죽었을때 이벤트
 app.on('gpu-process-crashed', () => {});
 
 // setting window
-const openSetting = (window) => {
+const openSetting = () => {
   if (settingsWin) {
     settingsWin.focus();
     return;
@@ -147,40 +164,6 @@ const openSetting = (window) => {
   settingsWin.loadURL('file:///' + path.join(__dirname, 'setting.html'));
 };
 
-const openPopup = url => {
-  const preference = (Config.data && Config.data.popup_bounds) ? Config.data.popup_bounds : {};
-  preference.icon = path.join(__dirname, 'tweetdeck.ico');
-  preference.modal = false;
-  preference.show = true;
-  preference.autoHideMenuBar = true;
-  preference.webPreferences = {
-    nodeIntegration: false,
-    webSecurity: true,
-    preload: path.join(__dirname, 'preload_popup.js'),
-  };
-  popup = new BrowserWindow(preference);
-  popup.on('close', e => {
-    Config.load();
-    if (popup) {
-      e.sender.hide();
-      if (e.sender.isMaximized()) {
-        e.sender.unmaximize();
-      }
-      if (e.sender.isFullScreen()){
-        e.sender.setFullScreen(false);
-      }
-      Config.data.popup_bounds = popup.getBounds();
-    }
-    Config.save();
-    popup = null;
-  });
-  popup.webContents.on('new-window', (e, url) => {
-    e.preventDefault();
-    shell.openExternal(url);
-  });
-  popup.loadURL(url);
-  popup.setAlwaysOnTop(win.isAlwaysOnTop());
-};
 
 function openGoogleTranslatorWindow (text) {
   if (!gTranslatorWin) {
@@ -194,7 +177,7 @@ function openGoogleTranslatorWindow (text) {
         webSecurity: true,
       },
     });
-    gTranslatorWin.on('close', e => {
+    gTranslatorWin.on('close', () => {
       gTranslatorWin = null;
     });
   }
@@ -231,16 +214,6 @@ const sub_selectall = webContents => ({
 // page control
 //
 
-const sub_back_page = webContents => ({
-  label: 'Back',
-  click: () => webContents.send('command', 'back'),
-  enabled: webContents.canGoBack(),
-});
-const sub_forward_page = webContents => ({
-  label: 'Forward',
-  click: () => webContents.send('command', 'forward'),
-  enabled: webContents.canGoForward(),
-});
 const sub_reload = webContents => ({
   label: 'Reload',
   click: () => webContents.send('command', 'reload'),
@@ -257,11 +230,10 @@ const sub_alwaystop = window => ({
   click () {
     const flag = !window.isAlwaysOnTop();
     window.setAlwaysOnTop(flag);
-    if (popup) popup.setAlwaysOnTop(flag);
   },
 });
 
-const sub_setting = window => ({
+const sub_setting = () => ({
   label: 'Setting',
   click: () => openSetting(),
 });
@@ -361,52 +333,64 @@ const sub_open_link_popup = webContents => ({
 const sub_save_link = (webContents, Addr) => ({
   label: 'Save link as..',
   click () {
-    // 될 수 있으면 원본 화질의 이미지를 가져온다
-    const path = Util.getOrigPath(Addr.link);
-    const filename = Util.getFileName(path);
-    const ext = Util.getFileExtension(path);
+    let url = Addr.link;
     const filters = [];
-
-    // 리퀘스트를 때려서 해당 링크의 MIME TYPE을 얻어온다
     const reqOption = {
+      url,
       method: 'HEAD',
-      followAllRedirects: true, // 리다이렉트 따라가기 켬
-      url: path,
+      followAllRedirects: true,
     };
-    request(reqOption, (error, response, body) => {
-        // 에러가 발생하면 동작하지 않음
+    request(reqOption, (error, response) => {
       if (error) return;
-        // 컨텍스트 타입이 text/html인 경우 htm을 붙이고 필터에 추가
-      if (response.headers['content-type'] &&
-          response.headers['content-type'].toLowerCase().search('text/html') !== -1) {
-        filename += '.htm';
-        filters.push({
-          name: 'HTML Document',
-          extensions: ['htm'],
-        });
+      const realUrl = response.request.uri.href;
+      let filename = Util.getFileName(realUrl);
+      let contentType = response.headers['content-type'];
+      const parsedUrl = URL.parse(realUrl);
+      if (parsedUrl.hostname === 'i.imgur.com' && realUrl.endsWith('.gifv')) {
+        // force download gif (instead of gifv (mp4 video))
+        url = realUrl.replace(/\.gifv$/i, '.gif');
+        filename = filename.replace(/\.gifv$/i, '.gif');
+        contentType = 'image/gif';
       }
-      filters.push({
-        name: 'All Files',
-        extensions: ['*'],
-      });
-
-        // 모든 포인터 이벤트를 잠시 없앤다
+      if (typeof contentType === 'string') {
+        contentType = contentType.toLowerCase();
+        let extension = mime.getExtension(contentType);
+        if (extension) {
+          if (extension === 'jpeg') {
+            extension = 'jpg';
+          }
+          if (!filename.endsWith(`.${extension}`)) {
+            filename += `.${extension}`;
+          }
+          filters.push({
+            name: `${extension} File`,
+            extensions: [extension],
+          });
+        } else {
+          filters.push({
+            name: 'File',
+            extensions: ['*'],
+          });
+        }
+      }
+      // 모든 포인터 이벤트를 잠시 없앤다
       webContents.send('no-pointer', true);
 
-        // 저장 다이얼로그를 띄운다
       const savepath = dialog.showSaveDialog({
         defaultPath: filename,
         filters,
       });
 
-        // 포인터 이벤트를 되살린다
+      // 포인터 이벤트를 되살린다
       webContents.send('no-pointer', false);
 
       if (typeof savepath === 'undefined') return;
 
-        // http 요청해서 링크를 저장
-      const req_url = response.request.uri.href;
-      request(req_url).pipe(fs.createWriteStream(savepath));
+      // http 요청해서 링크를 저장
+      request({
+        url,
+        followAllRedirects: true,
+      }).pipe(fs.createWriteStream(savepath));
     });
   },
 });
@@ -414,16 +398,6 @@ const sub_save_link = (webContents, Addr) => ({
 const sub_copy_link = webContents => ({
   label: 'Copy link URL',
   click: () => webContents.send('command', 'copylink'),
-});
-
-// popup
-const sub_copy_page_url = webContents => ({
-  label: 'Copy Page URL',
-  click: () => webContents.send('command', 'copypageurl'),
-});
-const sub_open_page_external = webContents => ({
-  label: 'Open Page in Browser',
-  click: () => webContents.send('command', 'openpageexternal'),
 });
 
 // quote
@@ -453,6 +427,7 @@ app.on('ready', () => {
   preference.autoHideMenuBar = true;
   preference.webPreferences = {
     nodeIntegration: false,
+    contextIsolation: false,
     preload: path.join(__dirname, 'preload.js'),
   };
   win = new BrowserWindow(preference);
@@ -559,7 +534,6 @@ app.on('ready', () => {
           click () {
             var flag = !win.isAlwaysOnTop();
             win.setAlwaysOnTop(flag);
-            if (popup) popup.setAlwaysOnTop(flag);
           },
         },
         {
@@ -617,23 +591,7 @@ app.on('ready', () => {
     }
   });
 
-  ipcMain.on('page-ready-tdp', (event, arg) => {
-    // 업데이트 체크
-    if (Config.data.detectUpdate) {
-      setTimeout(updateCheck, 0, (err, latest) => {
-        if (err) {
-          // error check
-          win.webContents.send('toast-message', 'Update check failed');
-        }
-
-        const current = VERSION.value;
-        if (!err && versionCompare(current, latest) < 0) {
-          win.webContents.send('toast-message', 'Update required: newest version is ' + latest);
-        }
-        win.webContents.send('toast-message', VERSION.message);
-      });
-    }
-
+  ipcMain.on('page-ready-tdp', () => {
     // destroyed contents when loading
     const emojipadCSS = fs.readFileSync(path.join(__dirname, 'css/emojipad.css'), 'utf8');
     win.webContents.insertCSS(emojipadCSS);
@@ -691,28 +649,19 @@ app.on('ready', () => {
       }
 
       Config.data.bounds = win.getBounds();
-      if (popup) {
-        Config.data.popup_bounds = popup.getBounds();
-
-        popup.sender.hide();
-        if (popup.sender.isMaximized()) {
-          popup.sender.unmaximize();
-        }
-        if (popup.sender.isFullScreen()){
-          popup.sender.setFullScreen(false);
-        }
-      }
       Config.save();
       win = null;
-    } catch (e) { };
+    } catch (e) {
+      console.error(e);
+    }
   });
 
-  win.webContents.on('new-window', (e, url, target) => {
-    e.preventDefault();
-    if (Config.data.openURLInInternalBrowser && !global.keyState.shift ||
-        target === 'popup') {
-      openPopup(url);
-    } else {
+  win.webContents.on('new-window', (e, url) => {
+    // 트윗덱 계정추가 시 뜨는 팝업은 예외적으로 내부 브라우저로 열게 한다.
+    // 나머지 사이트는 외부 브라우저를 사용하도록.
+    const isTwitterAuth = url.startsWith('https://twitter.com/teams/authorize');
+    if (!isTwitterAuth) {
+      e.preventDefault();
       shell.openExternal(url);
     }
   });
@@ -835,7 +784,6 @@ app.on('ready', () => {
             if (win) {
               var flag = !win.isAlwaysOnTop();
               win.setAlwaysOnTop(flag);
-              if (popup) popup.setAlwaysOnTop(flag);
             }
           },
         },
@@ -906,52 +854,8 @@ ipcMain.on('nogpu-relaunch', () => {
   setTimeout(() => app.quit(), 100);
 });
 
-// JS version number compare
-// electron 버전 비교를 위해서 삽입
-// http://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number
-
-const versionCompare = (v1, v2, options) => {
-  var lexicographical = options && options.lexicographical,
-    zeroExtend = options && options.zeroExtend,
-    v1parts = v1.split('.'),
-    v2parts = v2.split('.');
-
-  function isValidPart(x) {
-    return (lexicographical ? /^\d+[A-Za-z]*$/ : /^\d+$/).test(x);
-  }
-  if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
-    return NaN;
-  }
-  if (zeroExtend) {
-    while (v1parts.length < v2parts.length) v1parts.push("0");
-    while (v2parts.length < v1parts.length) v2parts.push("0");
-  }
-  if (!lexicographical) {
-    v1parts = v1parts.map(Number);
-    v2parts = v2parts.map(Number);
-  }
-  for (var i = 0; i < v1parts.length; ++i) {
-    if (v2parts.length == i) {
-      return 1;
-    }
-    if (v1parts[i] == v2parts[i]) {
-      continue;
-    }
-    else if (v1parts[i] > v2parts[i]) {
-      return 1;
-    }
-    else {
-      return -1;
-    }
-  }
-  if (v1parts.length != v2parts.length) {
-    return -1;
-  }
-  return 0;
-}
-
 // 컨텍스트 메뉴
-ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
+ipcMain.on('context-menu', (event, menu, isRange, Addr) => {
 
   const template = [];
   const separator = { type: 'separator' };
@@ -961,14 +865,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       if (isRange) {
         template.push(sub_copy(event.sender));
         template.push(separator);
-      } else if (isPopup) {
-        template.push(sub_back_page(event.sender));
-        template.push(sub_forward_page(event.sender));
-        template.push(sub_reload(event.sender));
       }
-      if (!isPopup) {
-        template.push(sub_reload(event.sender));
-      }
+      template.push(sub_reload(event.sender));
       break;
 
     case 'text':
@@ -1015,7 +913,7 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       if (Config.data.enableOpenImageinPopup) {
         template.push(separator);
         template.push(sub_open_img(event.sender));
-        template.push(sub_open_img_popup(event.sender));
+        // template.push(sub_open_img_popup(event.sender));
         template.push(separator);
       } else {
         template.push(sub_open_img(event.sender));
@@ -1026,6 +924,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       break;
 
     case 'link':
+      template.push(sub_open_link(event.sender));
+      /*
       if (!Config.data.enableOpenLinkinPopup) {
         template.push(sub_open_link(event.sender));
       } else {
@@ -1033,6 +933,7 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
         template.push(sub_open_link_popup(event.sender));
         template.push(separator);
       }
+      */
       template.push(sub_save_link(event.sender, Addr));
       template.push(sub_copy_link(event.sender));
       template.push(separator);
@@ -1087,15 +988,8 @@ ipcMain.on('context-menu', (event, menu, isRange, Addr, isPopup) => {
       break;
   }
 
-  if (isPopup) {
-    template.push(separator);
-    template.push(sub_copy_page_url(event.sender));
-    template.push(sub_open_page_external(event.sender));
-  }
-
   const contextMenu = Menu.buildFromTemplate(template);
-  if (!isPopup) contextMenu.popup(win);
-  else if (popup) contextMenu.popup(popup);
+  contextMenu.popup(win);
   return;
 });
 
@@ -1103,7 +997,7 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
-ipcMain.on('twtlib-open', (event, arg) => {
+ipcMain.on('twtlib-open', () => {
   if (twtlibWin) {
     twtlibWin.focus();
     return;

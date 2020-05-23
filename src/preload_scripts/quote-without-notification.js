@@ -1,4 +1,3 @@
-/* globals TD */
 const Config = require('../config');
 
 function MakeQuoteWithoutNotification (ipcRenderer, id) {
@@ -11,9 +10,13 @@ function MakeQuoteWithoutNotification (ipcRenderer, id) {
   }
 
   function status (response) {
-    return (response.status >= 200 && response.status < 300) ? Promise.resolve(response)
-      : (response.status === 400) ? Promise.resolve(response)
-      : Promise.reject(new Error(response.statusText));
+    if (response.status >= 200 && response.status < 300) {
+      return Promise.resolve(response);
+    } else if (response.status === 400) {
+      return Promise.resolve(response);
+    } else {
+      return Promise.reject(new Error(response.statusText));
+    }
   }
 
   function json (response) {
@@ -28,18 +31,18 @@ function MakeQuoteWithoutNotification (ipcRenderer, id) {
   }
 
   fetch(apiUrl)
-  .then(showLog)
-  .then(status)
-  .then(json)
-  .then(handleErrors)
-  .then(function (data) {
-    const quoteUrl = data.url;
-    ipcRenderer.send('twtlib-send-text', quoteUrl);
-    window.$(document).trigger('uiComposeTweet', { type: 'tweet' });
-    window.toastMessage('Quote link generated');
-  }).catch(function (err) {
-    window.toastErrorMessage(err);
-  });
-};
+    .then(showLog)
+    .then(status)
+    .then(json)
+    .then(handleErrors)
+    .then(function (data) {
+      const quoteUrl = data.url;
+      ipcRenderer.send('twtlib-send-text', quoteUrl);
+      window.$(document).trigger('uiComposeTweet', { type: 'tweet' });
+      window.toastMessage('Quote link generated');
+    }).catch(function (err) {
+      window.toastErrorMessage(err);
+    });
+}
 
 module.exports = MakeQuoteWithoutNotification;

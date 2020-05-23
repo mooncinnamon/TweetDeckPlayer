@@ -1,16 +1,10 @@
-const electron = require('electron');
-const {app} = electron;
 const fs = require('fs');
-const path = require('path');
 const Util = require('./util');
 
 module.exports = {
   // 설정파일 로드
   _filePath: Util.getUserDataPath() + '/config.json',
   _defaultConfig: {
-    twColorMention: '#cb4f5f',
-    twColorHashtag: '#2b7bb9',
-    twColorURL: '#a84dba',
     customizeColumnSize: '310',
     customFontSize: '',
     quoteServer: 'https://quote.sapphire.sh',
@@ -23,6 +17,9 @@ module.exports = {
     autoReloadCycle: 12,
     enableUserNotes: false,
     detectUpdate: true,
+    disableParallelDownload: false,
+    notifyFastRetweet: true,
+    enableRtAndFav: false,
   },
   data: {},
   load () {
